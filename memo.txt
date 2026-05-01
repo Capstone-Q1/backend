@@ -1,0 +1,19 @@
+sqlite db 셋팅 방법 -> mysql이랑 완전 다름, 서버가 아니라 파일 시스템임
+
+11111111번 -> sqlite, mysql, docker 연계해서 뭐가 뭔지. prastsql?로 바꿔서 서버로 사용하는게 나을지 서버 사용법 확정 필요
+
+
+
+
+
+1. config, db 파일 확인
+2. 기본 셋팅 누락된거 없는지 확인
+2.1. .env에 db 기본 셋팅값 넣어줘야하지 않나? db이름이나 비번 설정 같은거
+3. docker에 db 올려서 연결 확인
+    - docker-compose.yml, Dockerfile 셋팅
+
+
+
+
+고려사항
+1. globalExceptionHandler와 customExceptionHandler를 만들어서 예외처리 및 관리 해야함
