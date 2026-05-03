@@ -1,0 +1,50 @@
+# app/models/solver_result.py
+from sqlalchemy import Column, Integer, String, text
+
+from app.core.db import Base
+
+
+class SolverResult(Base):
+    __tablename__ = "solver_results"
+
+    id = Column(Integer, primary_key=True, nullable=False, comment="테이블 고유 id, 내림차순 등의 조회에 사용 가능")
+    log_file_name = Column(String(255), nullable=False, comment="로그 파일명 (000.log)")
+    simulation_source = Column(String(50), nullable=False, comment="시뮬레이션 Source")
+    simulation_heating = Column(String(20), nullable=False, comment="Heating 설정")
+    simulation_spulsing = Column(String(20), nullable=False, comment="SPulsing 설정")
+    simulation_bias = Column(String(20), nullable=False, comment="Bias 설정")
+    simulation_dtout = Column(String(100), nullable=False, comment="출력 시간 간격 dtout")
+    chamber_lp = Column(String(100), nullable=False, comment="챔버 Lp")
+    chamber_rp = Column(String(100), nullable=False, comment="챔버 Rp")
+    chamber_ls = Column(String(100), nullable=False, comment="챔버 Ls")
+    chamber_rsub = Column(String(100), nullable=False, comment="챔버 Rsub")
+    source_powerh = Column(String(100), nullable=False, comment="소스 고전력 PowerH")
+    source_powerl = Column(String(100), nullable=False, comment="소스 저전력 PowerL")
+    source_frequency = Column(String(100), nullable=False, comment="소스 주파수 Frequency")
+    bias_power1h = Column(String(100), nullable=True, server_default=text("'null'"), comment="바이어스 Power1h")
+    bias_frequency1 = Column(String(100), nullable=True, server_default=text("'null'"), comment="바이어스 Frequency1")
+    pressure_pressure = Column(String(100), nullable=False, comment="챔버 압력 Pressure")
+    pressure_inlet_species = Column(String(50), nullable=False, comment="유입 종 Inlet species")
+    pressure_q = Column(String(100), nullable=False, comment="유량 Q")
+    considered_ar_star = Column(String(100), nullable=False, comment="고려 종 Ar*")
+    considered_ar = Column(String(100), nullable=False, comment="고려 종 Ar")
+    considered_ar_plus = Column(String(100), nullable=False, comment="고려 종 Ar+")
+    considered_e = Column(String(100), nullable=False, comment="고려 종 E")
+    temperature_gas_temperature = Column(String(100), nullable=False, comment="가스 온도")
+    temperature_electron_temperature = Column(String(100), nullable=False, comment="전자 온도")
+    temperature_ion_temperature = Column(String(100), nullable=False, comment="이온 온도")
+    heating_absorbed_power = Column(String(100), nullable=False, comment="흡수 전력")
+    heating_alpha = Column(String(100), nullable=False, comment="가열 계수 alpha")
+    heating_plasma_resistance = Column(String(100), nullable=False, comment="플라즈마 저항")
+    heating_plasma_reactance = Column(String(100), nullable=False, comment="플라즈마 리액턴스")
+    bias_dc_offset = Column(String(100), nullable=True, server_default=text("'null'"), comment="dc-offset")
+    bias_peak_to_peak = Column(String(100), nullable=True, server_default=text("'null'"), comment="peak-to-peak")
+    sheath_j0h_h = Column(String(100), nullable=False, comment="Sheath J0h_h")
+    number_density_ar_star = Column(String(100), nullable=False, comment="밀도 Ar*")
+    number_density_ar = Column(String(100), nullable=False, comment="밀도 Ar")
+    number_density_ar_plus = Column(String(100), nullable=False, comment="밀도 Ar+")
+    number_density_e = Column(String(100), nullable=False, comment="밀도 E")
+    ion_flux_ar_plus = Column(String(100), nullable=False, comment="이온 플럭스 Ar+")
+    radical_flux_ar_star = Column(String(100), nullable=False, comment="라디칼 플럭스 Ar*")
+    radical_flux_ar = Column(String(100), nullable=False, comment="라디칼 플럭스 Ar")
+    avg_ion_energy_ar_plus = Column(String(100), nullable=False, comment="평균 이온 에너지 Ar+")

@@ -50,3 +50,33 @@ repository.py에서 DB 작업 수행
     ↓
 db.close()로 세션 종료
 ```
+
+## Docker 실행 가이드
+
+### 1) 구성 파일
+
+- `Dockerfile`: FastAPI 백엔드 이미지를 빌드합니다.
+- `docker-compose.yml`: `backend`(FastAPI) + `postgres`(DB) 서비스를 함께 실행합니다.
+- `.env`: 앱 설정 및 DB 연결 문자열을 관리합니다.
+
+### 2) 컨테이너 역할
+
+- `backend` 컨테이너:
+  - FastAPI 서버(`uvicorn app.main:app`)를 실행합니다.
+  - API 요청 처리, DB 연결, 비즈니스 로직 수행을 담당합니다.
+- `postgres` 컨테이너:
+  - PostgreSQL DB 서버입니다.
+  - 백엔드 데이터 저장소 역할을 담당합니다.
+
+중요:
+
+- `backend`에서 DB 접속 시 `localhost`가 아니라 `postgres`(docker-compose 서비스명)를 사용해야 합니다.
+- 예: `DATABASE_URL=postgresql+psycopg://q1_user:q1_password@postgres:5432/q1_backend`
+
+### 3) 실행 순서
+
+1. DB만 먼저 실행
+
+```bash
+docker compose up -d postgres
+```
