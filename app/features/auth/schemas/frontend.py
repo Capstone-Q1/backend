@@ -30,3 +30,15 @@ class RefreshTokenResponseData(BaseModel):
 class RefreshTokenResponse(BaseModel):
     status: Literal["success"] = "success"
     data: RefreshTokenResponseData
+
+
+class MeResponseData(BaseModel):
+    user_id: str
+    login_id: str
+    name: str
+    role: str
+
+
+class MeResponse(BaseModel):
+    status: Literal["success"] = "success"
+    data: MeResponseData
