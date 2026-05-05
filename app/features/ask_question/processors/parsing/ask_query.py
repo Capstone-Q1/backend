@@ -28,7 +28,7 @@ async def request_ai_answer(payload: dict) -> AiQuestionResponse:
 
 
 
-async def log_parsing(solver_log: UploadFile = File(...)): #파일에서 파라미터 파싱할 때만 사용
+async def log_parsing(solver_log: UploadFile ): #파일에서 파라미터 파싱할 때만 사용
     raw_bytes = await solver_log.read()      # 파일 원본
     text = raw_bytes.decode("utf-8")         # 문자열 변환
     parsed = parse_solver_log_text(text)     # 네 파서 호출
