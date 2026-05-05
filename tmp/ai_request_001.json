@@ -1,0 +1,86 @@
+{
+  "query_text": "로그의 인풋 파라미터 기준 유사한 데이터를 보여줘",
+  "data": {
+    "SETTINGS": {
+      "SIMULATION OPTIONS": {
+        "Source": "TCP",
+        "Heating": "ON",
+        "SPulsing": "OFF",
+        "Bias": "ON",
+        "dtout": "1.00e-09 (s)"
+      },
+      "CHAMBER GEOMETRY": {
+        "Lp": "1.3000e+01 (cm)",
+        "Rp": "1.8000e+01 (cm)",
+        "Ls": "1.0000e+01 (cm)",
+        "Rsub": "1.0000e+01 (cm)"
+      },
+      "SOURCE POWER CONDITIONS": {
+        "PowerH": "1.0000e+02 (W)",
+        "PowerL": "0.0000e+00 (W)",
+        "Frequency": "1.3560e+07 (Hz)"
+      },
+      "BIAS POWER CONDITIONS": {
+        "Power1h": "2.0000e+02 (W)",
+        "Frequency1": "2.0000e+06 (Hz)"
+      },
+      "PREASURE & INLET CONDITIONS": {
+        "Pressure": "2.0000e+00 (mTorr)",
+        "Inlet species": "Ar",
+        "Q": "2.000e+01 (sccm)"
+      },
+      "CONSIDERED SPECIES": {
+        "Species": {
+          "Ar*": "6.633365e-23 (g)",
+          "Ar": "6.633365e-23 (g)",
+          "Ar+": "6.633365e-23 (g)",
+          "E": "9.049725e-28 (g)"
+        }
+      }
+    },
+    "OUTPUT LIST": {
+      "TEMPERATURE PARAMETERS": {
+        "Gas Temperature": "2.585315e-02 (eV)",
+        "Electron Temperature": "3.166977e+00 (eV)",
+        "Ion Temperature": "2.629266e-01 (eV)"
+      },
+      "HEATING PARAMETERS": {
+        "Absorbed power": "8.598479e+01 (W)",
+        "alpha": "8.598479e-01 (a.u.)",
+        "Plasma resistance": "3.602980e-01 (ohm)",
+        "Plasma reactance": "7.139614e+00 (ohm)"
+      },
+      "BIAS PARAMETERS": {
+        "dc-offset": "-2.331892e+02 (V)",
+        "peak-to-peak": "8.357357e+02 (V)"
+      },
+      "SHEATH PARAMETERS": {
+        "J0h_h": "1.606389e+07 (statampere/cm^2)"
+      },
+      "NUMBER DENSITY": {
+        "Species": {
+          "Ar*": "1.036295e+11 (cm^3)",
+          "Ar": "5.729605e+13 (cm^3)",
+          "Ar+": "4.421264e+10 (cm^3)",
+          "E": "4.421264e+10 (cm^3)"
+        }
+      },
+      "ION FLUX AT THE SHEATH EDGE": {
+        "Species": {
+          "Ar+": "7.416731e+15 (cm^2sec)"
+        }
+      },
+      "RADICAL FLUX AT THE SHEATH EDGE": {
+        "Species": {
+          "Ar*": "1.376877e+15 (cm^2sec)",
+          "Ar": "6.161113e+17 (cm^2sec)"
+        }
+      },
+      "AVERAGE ION ENERGY AT THE SUBSTRATE": {
+        "Species": {
+          "Ar+": "2.063134e+02 (eV)"
+        }
+      }
+    }
+  }
+}

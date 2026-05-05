@@ -1,0 +1,73 @@
+from pydantic import BaseModel, ConfigDict, Field
+from typing import Literal
+
+
+# 유사한 로그 1건의 상세 데이터 스키마.
+# 유사 로그 검색 결과를 API 응답으로 담을 때(파싱/검증/직렬화) 사용.
+class SimilarLogData(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    file_name: str = Field(alias="file_name")
+    source: str = Field(alias="Source")
+    heating: str = Field(alias="Heating")
+    spulsing: str = Field(alias="SPulsing")
+    bias: str = Field(alias="Bias")
+    dtout: float = Field(alias="dtout")
+    lp: float = Field(alias="Lp")
+    rp: float = Field(alias="Rp")
+    ls: float = Field(alias="Ls")
+    rsub: float = Field(alias="Rsub")
+    power_h: float = Field(alias="PowerH")
+    power_l: float = Field(alias="PowerL")
+    frequency: float = Field(alias="Frequency")
+    pressure: float = Field(alias="Pressure")
+    inlet_species: str = Field(alias="Inlet_species")
+    q: float = Field(alias="Q")
+    gas_temperature: float = Field(alias="Gas_Temperature")
+    electron_temperature: float = Field(alias="Electron_Temperature")
+    ion_temperature: float = Field(alias="Ion_Temperature")
+    absorbed_power: float = Field(alias="Absorbed_power")
+    alpha: float = Field(alias="alpha")
+    plasma_resistance: float = Field(alias="Plasma_resistance")
+    plasma_reactance: float = Field(alias="Plasma_reactance")
+    j0h_h: float = Field(alias="J0h_h")
+    ar_star_density: float = Field(alias="Ar_star_density")
+    ar_density: float = Field(alias="Ar_density")
+    ar_plus_density: float = Field(alias="Ar_plus_density")
+    e_density: float = Field(alias="E_density")
+    ar_plus_ion_flux: float = Field(alias="Ar_plus_ion_flux")
+    ar_star_radical_flux: float = Field(alias="Ar_star_radical_flux")
+    ar_radical_flux: float = Field(alias="Ar_radical_flux")
+    ar_plus_avg_ion_energy: float = Field(alias="Ar_plus_avg_ion_energy")
+
+
+# ask_question 성공 응답의 data 본문 스키마.
+# 질의 처리 후 핵심 결과(session/log/답변/유사로그 목록)를 묶어 반환할 때 사용.
+class AskQuestionData(BaseModel):
+    session_id: int
+    log_id: int
+    chat_response: str
+    similar_logs_data: list[SimilarLogData]
+
+
+# ask_question 성공 응답의 최상위 스키마.
+# 라우터에서 정상 처리된 응답 형태(status + data)를 고정할 때 사용.
+class AskQuestionResponse(BaseModel): #최종적으로 프론트엔드에 반환되는 응답 스키마
+    status: Literal["success"]
+    data: AskQuestionData
+
+
+# ask_question 요청 바디 입력 스키마.
+# 클라이언트가 보낸 session_id, query_text를 검증할 때 사용.
+class AskQuestionForm(BaseModel):
+    session_id: int | None = Field(default=None, description="기존 채팅방이면 전달")
+    query_text: str = Field(min_length=1, description="사용자 자연어 질의")
+
+
+
+
+# 에러 응답 공통 스키마.
+# 실패/예외 상황에서 error_code, error_message를 일관되게 반환할 때 사용.
+class ErrorResponse(BaseModel):
+    error_code: str
+    error_message: str
