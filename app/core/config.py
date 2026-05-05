@@ -49,6 +49,9 @@ class Settings(BaseSettings):
     # access token 만료 시간(분)
     access_token_expire_minutes: int = 60
 
+    # refresh token 만료 기간(일)
+    refresh_token_expire_days: int = 14
+
     # Settings 클래스가 .env 파일을 읽는 방식 설정
     model_config = SettingsConfigDict(
         # 프로젝트 루트에 있는 .env 파일을 읽는다.

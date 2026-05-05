@@ -12,3 +12,10 @@ class AuthRepository:
             .filter(User.login_id == login_id)
             .first()
         )
+    
+    def find_by_user_id(self, user_id: str) -> User | None:
+        return (
+            self.db.query(User)
+            .filter(User.user_id == user_id)
+            .first()
+        )
