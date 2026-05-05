@@ -7,3 +7,6 @@ python-multipart
 httpx
 psycopg[binary]
 alembic
+PyJWT
+passlib[bcrypt]
+bcrypt==4.0.1

@@ -7,8 +7,8 @@ class LoginRequest(BaseModel):
 
 
 class LoginResponseData(BaseModel):
+    access_token: str
     user_id: str
-    login_id: str
     name: str
     role: str
 

@@ -39,6 +39,16 @@ class Settings(BaseSettings):
     # 나중에 파일 업로드 검증에서 사용한다.
     max_log_file_size_mb: int = 5
 
+    # JWT 서명에 사용할 비밀키
+    # 스프링의 jwt.secret 같은 설정값이다.
+    jwt_secret_key: str
+
+    # JWT 서명 알고리즘
+    jwt_algorithm: str = "HS256"
+
+    # access token 만료 시간(분)
+    access_token_expire_minutes: int = 60
+
     # Settings 클래스가 .env 파일을 읽는 방식 설정
     model_config = SettingsConfigDict(
         # 프로젝트 루트에 있는 .env 파일을 읽는다.
