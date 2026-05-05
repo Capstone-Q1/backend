@@ -10,7 +10,7 @@ from app.features.auth.router import router as auth_router
 
 # 중요: create_all 전에 모델이 import되어 있어야 metadata에 등록됨
 # 모델을 app/models 패키지로 둘 경우
-import app.models  # noqa: F401
+from app.models import *  # noqa: F401
 
 # 만약 feature 내부에 models.py를 둘 경우 아래로 교체
 # from app.features.ask_question import models  # noqa: F401

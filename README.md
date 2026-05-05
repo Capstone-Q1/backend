@@ -80,3 +80,7 @@ db.close()로 세션 종료
 ```bash
 docker compose up -d postgres
 ```
+
+# DB에 solver_log 결과 삽입
+
+tmp에 0~149.log 150개를 넣어두고 insert_log 실행하면 db에 삽입됨

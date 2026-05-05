@@ -1,33 +1,27 @@
+# /Users/cheonjuhwan/Documents/GitHub/Q1_backend/app/features/ask_question/exceptions.py
 from fastapi import status
 from app.core.exceptions import AppException
 
 class MissingQuestionException(AppException):
     def __init__(self):
-        super().__init__(
-            message="question is required",
-            status_code=status.HTTP_400_BAD_REQUEST,
-            error_code="AQ_001",
-        )
+        super().__init__("question is required", status.HTTP_400_BAD_REQUEST, "AQ_001")
+
+class MissingSolverLogException(AppException):
+    def __init__(self):
+        super().__init__("solver.log is required", status.HTTP_400_BAD_REQUEST, "AQ_002")
+
+class InvalidLogFileExtensionException(AppException):
+    def __init__(self):
+        super().__init__("only .log is allowed", status.HTTP_400_BAD_REQUEST, "AQ_003")
+
+class FileSizeExceededException(AppException):
+    def __init__(self):
+        super().__init__("file size exceeded", status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "AQ_004")
 
 class InvalidSolverLogException(AppException):
-    def __init__(self):
-        super().__init__(
-            message="invalid solver.log",
-            status_code=status.HTTP_400_BAD_REQUEST,
-            error_code="AQ_002",
-        )
+    def __init__(self, message: str = "invalid solver.log"):
+        super().__init__(message, status.HTTP_400_BAD_REQUEST, "AQ_005")
 
 class AiRequestFailedException(AppException):
-    def __init__(self):
-        super().__init__(
-            message="ai request failed",
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            error_code="AQ_003",
-        )
-
-
-class AppException(Exception):
-    def __init__(self, message: str, status_code: int, error_code: str = "APP_000"):
-        self.message = message
-        self.status_code = status_code
-        self.error_code = error_code
+    def __init__(self, message: str = "ai request failed"):
+        super().__init__(message, status.HTTP_502_BAD_GATEWAY, "AQ_006")

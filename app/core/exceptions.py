@@ -3,28 +3,8 @@
 
 from fastapi import status
 
-
 class AppException(Exception):
-    def __init__(
-        self,
-        message: str,
-        status_code: int = status.HTTP_400_BAD_REQUEST,
-    ):
+    def __init__(self, message: str, status_code: int = status.HTTP_400_BAD_REQUEST, error_code: str = "APP_000"):
         self.message = message
         self.status_code = status_code
-
-
-class InvalidLogFileException(AppException):
-    def __init__(self, message: str = "파일 내용이 올바른 solver.log 형식이 아닙니다."):
-        super().__init__(
-            message=message,
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
-
-
-class FileSizeExceededException(AppException):
-    def __init__(self, message: str = "파일 용량을 초과했습니다."):
-        super().__init__(
-            message=message,
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-        )
+        self.error_code = error_code
