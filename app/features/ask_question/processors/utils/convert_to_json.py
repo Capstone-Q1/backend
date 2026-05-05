@@ -112,9 +112,73 @@ def to_ai_request_payload(query_text: str, parsed_values: dict[str, str | None])
         query_text=query_text,
         data=build_ai_data(parsed_values),
     )
-    return req.model_dump(by_alias=True, exclude_none=False)
+    return req.model_dump(by_alias=True, exclude_none=False) # json으로 변환
 
 
 
 
 ## 프론트로 보낼 때 사용할 변환 메서드 추가 필요
+# ai에서 넘어온 유사 데이터를 조회하여 프론트엔드 스키마에 맞게 변환하는 메서드도 여기에 추가
+
+import json
+from app.features.ask_question.schemas.frontend import AskQuestionResponse, SimilarLogData
+from app.models.solver_result import SolverResult
+
+def to_query_solver_log_json(parsed_values: dict[str, str | None]) -> str:
+    return json.dumps(parsed_values, ensure_ascii=False)
+
+def _to_float(v: str | None) -> float:
+    if v in (None, "", "null", "None"):
+        return 0.0
+    s = str(v).strip()
+    if "(" in s:
+        s = s.split("(", 1)[0].strip()
+    return float(s)
+
+def row_to_similar_log_data(row: SolverResult) -> SimilarLogData:
+    return SimilarLogData(
+        file_name=row.log_file_name,
+        source=row.simulation_source,
+        heating=row.simulation_heating,
+        spulsing=row.simulation_spulsing,
+        bias=row.simulation_bias,
+        dtout=_to_float(row.simulation_dtout),
+        lp=_to_float(row.chamber_lp),
+        rp=_to_float(row.chamber_rp),
+        ls=_to_float(row.chamber_ls),
+        rsub=_to_float(row.chamber_rsub),
+        power_h=_to_float(row.source_powerh),
+        power_l=_to_float(row.source_powerl),
+        frequency=_to_float(row.source_frequency),
+        pressure=_to_float(row.pressure_pressure),
+        inlet_species=row.pressure_inlet_species,
+        q=_to_float(row.pressure_q),
+        gas_temperature=_to_float(row.temperature_gas_temperature),
+        electron_temperature=_to_float(row.temperature_electron_temperature),
+        ion_temperature=_to_float(row.temperature_ion_temperature),
+        absorbed_power=_to_float(row.heating_absorbed_power),
+        alpha=_to_float(row.heating_alpha),
+        plasma_resistance=_to_float(row.heating_plasma_resistance),
+        plasma_reactance=_to_float(row.heating_plasma_reactance),
+        j0h_h=_to_float(row.sheath_j0h_h),
+        ar_star_density=_to_float(row.number_density_ar_star),
+        ar_density=_to_float(row.number_density_ar),
+        ar_plus_density=_to_float(row.number_density_ar_plus),
+        e_density=_to_float(row.number_density_e),
+        ar_plus_ion_flux=_to_float(row.ion_flux_ar_plus),
+        ar_star_radical_flux=_to_float(row.radical_flux_ar_star),
+        ar_radical_flux=_to_float(row.radical_flux_ar),
+        ar_plus_avg_ion_energy=_to_float(row.avg_ion_energy_ar_plus),
+    )
+
+def to_frontend_success_payload(session_id: int, log_id: int, chat_response: str, similar_rows: list[SolverResult]) -> dict:
+    response = AskQuestionResponse(
+        status="success",
+        data={
+            "session_id": session_id,
+            "log_id": log_id,
+            "chat_response": chat_response,
+            "similar_logs_data": [row_to_similar_log_data(r) for r in similar_rows],
+        },
+    )
+    return response.model_dump(by_alias=True)
