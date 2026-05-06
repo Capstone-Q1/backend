@@ -1,4 +1,4 @@
-from app.core.security import create_access_token, create_refresh_token, decode_refresh_token, verify_password
+from app.core.security import create_access_token, create_refresh_token, decode_refresh_token, hash_token, verify_password, verify_token
 from app.features.auth.repository import AuthRepository
 from app.features.auth.schemas.frontend import LoginRequest, LoginResponse, LoginResponseData, RefreshTokenResponseData, RefreshTokenRequest, RefreshTokenResponse
 
@@ -24,6 +24,11 @@ class AuthService:
 
         refresh_token = create_refresh_token(
             user_id=user.user_id,
+        )
+
+        self.repository.update_refresh_token_hash(
+            user_id=user.user_id,
+            refresh_token_hash=hash_token(refresh_token),
         )
 
         return LoginResponse(
@@ -55,6 +60,9 @@ class AuthService:
         if user is None:
             return None
 
+        if not verify_token(request.refresh_token, user.refresh_token_hash):
+            return None
+
         access_token = create_access_token(
             user_id=user.user_id,
             login_id=user.login_id,
@@ -66,6 +74,9 @@ class AuthService:
                 access_token=access_token,
             )
         )
+    
+    def logout(self, user_id: str) -> None:
+        self.repository.clear_refresh_token_hash(user_id)
 
 
 

@@ -60,3 +60,19 @@ def get_me(
             role=current_user.role,
         )
     )
+
+@router.post("/logout")
+def logout(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    repository = AuthRepository(db)
+    service = AuthService(repository)
+
+    service.logout(current_user.user_id)
+
+    return {
+        "status": "success",
+        "message": "로그아웃되었습니다.",
+    }
+

@@ -5,6 +5,9 @@ import jwt
 from jwt import InvalidTokenError
 from passlib.context import CryptContext
 
+import hashlib
+import hmac
+
 from app.core.config import settings
 
 
@@ -17,6 +20,17 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, password_hash: str) -> bool:
     return password_context.verify(plain_password, password_hash)
+
+#refresh token 원본을 DB 저장용 해시로 바꿈
+def hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+#요청으로 받은 refresh token을 해시해서 DB 값과 비교
+def verify_token(token: str, token_hash: str | None) -> bool:
+    if token_hash is None:
+        return False
+
+    return hmac.compare_digest(hash_token(token), token_hash)
 
 #로그인 성공 시 액세스 토큰 생성
 def create_access_token(

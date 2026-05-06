@@ -19,3 +19,25 @@ class AuthRepository:
             .filter(User.user_id == user_id)
             .first()
         )
+    
+    def update_refresh_token_hash(
+        self,
+        user_id: str,
+        refresh_token_hash: str,
+    ) -> None:
+        user = self.find_by_user_id(user_id)
+
+        if user is None:
+            return
+
+        user.refresh_token_hash = refresh_token_hash
+        self.db.commit()
+        
+    def clear_refresh_token_hash(self, user_id: str) -> None:
+        user = self.find_by_user_id(user_id)
+
+        if user is None:
+            return
+
+        user.refresh_token_hash = None #NULL이라고 보면 됨
+        self.db.commit()
