@@ -14,6 +14,8 @@ class User(Base):
     name = Column(Text, nullable=False, comment="이름")
     role = Column(Text, nullable=False, server_default=text("'USER'"), comment="관리자 권한")
     created_at = Column(Text, nullable=False, comment="계정 생성 시간")
+    refresh_token_hash = Column(Text, nullable=True, comment="리프레시 토큰 해시")
+
 
     chat_sessions = relationship("ChatSession", back_populates="user")
     query_response_logs = relationship("QueryResponseLog", back_populates="user")
