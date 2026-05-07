@@ -105,6 +105,19 @@ def find_chat_session_by_id(db: Session, *, session_id: int, user_id: str) -> Ch
         .first()
     )
 
+# 사용자의 채팅방 목록 조회
+# 사이드바 대화 히스토리에 표시할 채팅방 목록을 마지막 대화 시각 기준 최신순으로 조회한다.
+def find_chat_sessions_by_user_id(db: Session, *, user_id: str) -> list[ChatSession]:
+    return (
+        db.query(ChatSession)
+        .filter(ChatSession.user_id == user_id)
+        .order_by(
+            ChatSession.updated_at.desc(),
+            ChatSession.session_id.desc(),
+        )
+        .all()
+    )
+
 #새 채팅방 생성
 def create_chat_session(db: Session, *, user_id: str, title: str) -> ChatSession:
     now = datetime.now(timezone.utc)

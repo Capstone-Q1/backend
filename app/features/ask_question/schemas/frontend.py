@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Literal
+from datetime import datetime
 
 
 # 유사한 로그 1건의 상세 데이터 스키마.
@@ -67,6 +68,20 @@ class AskQuestionForm(BaseModel):
     query_text: str = Field(min_length=1, description="사용자 자연어 질의")
 
 
+# 채팅방 목록 1건의 응답 스키마.
+# 사이드바 대화 히스토리에 표시할 채팅방 id, 제목, 생성 시각, 마지막 대화 시각을 반환할 때 사용.
+class ChatSessionListItem(BaseModel):
+    session_id: int
+    title: str
+    created_at: datetime
+    updated_at: datetime
+
+
+# 채팅방 목록 조회 성공 응답의 최상위 스키마.
+# 현재 로그인한 사용자의 채팅방 목록을 최신 대화순으로 반환할 때 사용.
+class ChatSessionListResponse(BaseModel):
+    status: Literal["success"] = "success"
+    data: list[ChatSessionListItem]
 
 
 # 에러 응답 공통 스키마.

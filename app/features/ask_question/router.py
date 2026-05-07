@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_db, get_current_user
-from app.features.ask_question.service import ask_question_service
+from app.features.ask_question.service import ask_question_service, get_chat_sessions_service
+from app.features.ask_question.schemas.frontend import ChatSessionListResponse
 from app.models.user import User
 
 router = APIRouter()
@@ -29,4 +30,17 @@ async def ask_question(
         session_id=session_id,
         query_text=query_text,
         solver_log=solver_log,
+    )
+
+# 채팅방 목록 조회 API.
+# Authorization 헤더의 Bearer 토큰에서 현재 사용자를 확인하고,
+# 해당 사용자의 채팅방 목록을 마지막 대화 시각 기준 최신순으로 반환한다.
+@router.get("/sessions", response_model=ChatSessionListResponse)
+def get_chat_sessions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return get_chat_sessions_service(
+        db,
+        user_id=current_user.user_id,
     )

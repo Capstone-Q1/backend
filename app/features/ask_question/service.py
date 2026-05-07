@@ -31,8 +31,12 @@ from app.features.ask_question.repository import (
     update_query_response,
     update_chat_session_updated_at,
     find_chat_session_by_id,
+    find_chat_sessions_by_user_id,
 )
-
+from app.features.ask_question.schemas.frontend import (
+    ChatSessionListItem,
+    ChatSessionListResponse,
+)
 
 async def ask_question_service(
     db, *, user_id: str, session_id: int | None, query_text: str, solver_log: UploadFile
@@ -130,4 +134,22 @@ async def ask_question_service(
         similar_rows=ordered_rows,
         # 프론트 응답에서 입력 데이터의 file_name으로 들어갈 값. 파일명이 없으면 기본값 사용
         input_file_name=solver_log.filename or "uploaded_solver.log",
+    )
+
+
+# 채팅방 목록 조회 서비스 레이어.
+# 현재 로그인한 사용자의 채팅방 목록을 조회하고 프론트엔드 응답 스키마로 변환한다.
+def get_chat_sessions_service(db, *, user_id: str) -> ChatSessionListResponse:
+    rows = find_chat_sessions_by_user_id(db, user_id=user_id)
+
+    return ChatSessionListResponse(
+        data=[
+            ChatSessionListItem(
+                session_id=row.session_id,
+                title=row.title,
+                created_at=row.created_at,
+                updated_at=row.updated_at,
+            )
+            for row in rows
+        ]
     )
