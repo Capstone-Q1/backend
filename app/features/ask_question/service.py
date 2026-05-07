@@ -28,6 +28,7 @@ from app.features.ask_question.repository import (
     create_chat_session,
     find_solver_results_by_log_file_names,
     update_query_response,
+    update_chat_session_updated_at,
     find_chat_session_by_id,
 )
 
@@ -115,6 +116,9 @@ async def ask_question_service(
         response_text=ai_result.data.chat_response, # 자연어 응답
         similar_log_files=similar_logs, # log 넘버 (000.log) 
     )
+
+    # 채팅방의 마지막 대화 시간을 갱신한다.
+    update_chat_session_updated_at(db, session_id=session_id)
 
     # 최종 프론트 응답 스키마로 직렬화해 반환한다.
     return to_frontend_success_payload(

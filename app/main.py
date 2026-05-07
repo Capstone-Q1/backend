@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.core.db import Base, engine
 from app.core.exceptions import AppException
 from app.features.auth.router import router as auth_router
+from app.features.ask_question.router import router as ask_question_router
 
 # 중요: create_all 전에 모델이 import되어 있어야 metadata에 등록됨
 # 모델을 app/models 패키지로 둘 경우
@@ -47,13 +48,11 @@ def health_check():
     }
 
 
-# 라우터 생기면 등록
-# from app.features.ask_question.router import router as ask_question_router
-# app.include_router(
-#     ask_question_router,
-#     prefix="/api/v1/ask-question",
-#     tags=["Ask Question"],
-# )
+app.include_router(
+    ask_question_router,
+    prefix="/api/v1/ask-question",
+    tags=["Ask Question"],
+)
 
 
 app.include_router(
