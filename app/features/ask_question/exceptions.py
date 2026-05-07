@@ -25,3 +25,11 @@ class InvalidSolverLogException(AppException):
 class AiRequestFailedException(AppException):
     def __init__(self, message: str = "ai request failed"):
         super().__init__(message, status.HTTP_502_BAD_GATEWAY, "AQ_006")
+
+class ChatSessionNotFoundException(AppException):
+    def __init__(self, session_id: int):
+        super().__init__(
+            f"chat_session not found: session_id={session_id}",
+            status.HTTP_404_NOT_FOUND,
+            "AQ_007",
+        )

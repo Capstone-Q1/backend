@@ -23,6 +23,7 @@ from app.features.ask_question.processors.utils.convert_to_json import (
     to_frontend_success_payload,
     to_query_solver_log_json,
 )
+from app.features.ask_question.exceptions import ChatSessionNotFoundException
 from app.features.ask_question.repository import (
     create_query_log,
     create_chat_session,
@@ -51,8 +52,7 @@ async def ask_question_service(
             user_id=user_id,
         )
         if chat_session is None:
-            #나중에 예외처리 할 때 수정 예정
-            raise ValueError(f"chat_session not found: session_id={session_id}")
+            raise ChatSessionNotFoundException(session_id)
 
 
     #문서의 parseLog 단계: solver.log 입력값을 검증하고 텍스트로 변환한 뒤 핵심 파라미터를 파싱한다.
