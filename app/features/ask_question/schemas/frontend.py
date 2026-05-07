@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Literal
+from datetime import datetime
 
 
 # 유사한 로그 1건의 상세 데이터 스키마.
@@ -67,6 +68,47 @@ class AskQuestionForm(BaseModel):
     query_text: str = Field(min_length=1, description="사용자 자연어 질의")
 
 
+# 채팅방 목록 1건의 응답 스키마.
+# 사이드바 대화 히스토리에 표시할 채팅방 id, 제목, 생성 시각, 마지막 대화 시각을 반환할 때 사용.
+class ChatSessionListItem(BaseModel):
+    session_id: int
+    title: str
+    created_at: datetime
+    updated_at: datetime
+
+
+# 채팅방 목록 조회 성공 응답의 최상위 스키마.
+# 현재 로그인한 사용자의 채팅방 목록을 최신 대화순으로 반환할 때 사용.
+class ChatSessionListResponse(BaseModel):
+    status: Literal["success"] = "success"
+    data: list[ChatSessionListItem]
+
+
+# 채팅방 상세 조회에서 대화 1건을 표현하는 응답 스키마.
+# query_response_log 1행을 프론트엔드 채팅 메시지 형태로 반환할 때 사용.
+class ChatSessionDetailMessage(BaseModel):
+    log_id: int
+    query_text: str
+    chat_response: str | None
+    has_analysis: bool
+    created_at: datetime
+    response_at: datetime | None
+
+
+# 채팅방 상세 조회 응답의 data 스키마.
+# 채팅방 기본 정보와 해당 채팅방의 전체 질의응답 목록을 묶어 반환할 때 사용.
+class ChatSessionDetailData(BaseModel):
+    session_id: int
+    title: str
+    created_at: datetime
+    messages: list[ChatSessionDetailMessage]
+
+
+# 채팅방 상세 조회 성공 응답의 최상위 스키마.
+# 사이드바에서 채팅방을 클릭했을 때 채팅 영역에 표시할 전체 대화 내역을 반환할 때 사용.
+class ChatSessionDetailResponse(BaseModel):
+    status: Literal["success"] = "success"
+    data: ChatSessionDetailData
 
 
 # 에러 응답 공통 스키마.
