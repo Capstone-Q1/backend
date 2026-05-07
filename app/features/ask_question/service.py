@@ -121,5 +121,9 @@ async def ask_question_service(
         session_id=session_id,
         log_id=query_log.log_id,
         chat_response=ai_result.data.chat_response,
+        # 사용자가 업로드한 solver.log에서 parseLog로 뽑은 값. 이게 input_log_data로 변환됨
+        input_values=parsed,
         similar_rows=ordered_rows,
+        # 프론트 응답에서 입력 데이터의 file_name으로 들어갈 값. 파일명이 없으면 기본값 사용
+        input_file_name=solver_log.filename or "uploaded_solver.log",
     )

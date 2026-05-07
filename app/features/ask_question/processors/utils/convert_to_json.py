@@ -135,6 +135,55 @@ def _to_float(v: str | None) -> float:
         s = s.split("(", 1)[0].strip()
     return float(s)
 
+def parsed_to_similar_log_data(
+    parsed_values: dict[str, str | None],
+    *,
+    file_name: str = "uploaded_solver.log",
+) -> SimilarLogData:
+
+    # parseLog 결과를 프론트 응답 형태로 변환한다.
+
+    #parseLog는 simulation_source, source_powerh 같은 내부 key를 반환한다.
+    #하지만 프론트에서는 사용자가 업로드한 입력 데이터와 AI가 찾은 유사 데이터를
+    #같은 key 구조로 비교해야 하므로, input_log_data도 similar_logs_data와
+    #동일한 DTO와 alias를 사용하도록 변환한다.
+
+    return SimilarLogData(
+        file_name=file_name,
+        source=parsed_values.get("simulation_source") or "",
+        heating=parsed_values.get("simulation_heating") or "",
+        spulsing=parsed_values.get("simulation_spulsing") or "",
+        bias=parsed_values.get("simulation_bias") or "",
+        dtout=_to_float(parsed_values.get("simulation_dtout")),
+        lp=_to_float(parsed_values.get("chamber_lp")),
+        rp=_to_float(parsed_values.get("chamber_rp")),
+        ls=_to_float(parsed_values.get("chamber_ls")),
+        rsub=_to_float(parsed_values.get("chamber_rsub")),
+        power_h=_to_float(parsed_values.get("source_powerh")),
+        power_l=_to_float(parsed_values.get("source_powerl")),
+        frequency=_to_float(parsed_values.get("source_frequency")),
+        pressure=_to_float(parsed_values.get("pressure_pressure")),
+        inlet_species=parsed_values.get("pressure_inlet_species") or "",
+        q=_to_float(parsed_values.get("pressure_q")),
+        gas_temperature=_to_float(parsed_values.get("temperature_gas_temperature")),
+        electron_temperature=_to_float(parsed_values.get("temperature_electron_temperature")),
+        ion_temperature=_to_float(parsed_values.get("temperature_ion_temperature")),
+        absorbed_power=_to_float(parsed_values.get("heating_absorbed_power")),
+        alpha=_to_float(parsed_values.get("heating_alpha")),
+        plasma_resistance=_to_float(parsed_values.get("heating_plasma_resistance")),
+        plasma_reactance=_to_float(parsed_values.get("heating_plasma_reactance")),
+        j0h_h=_to_float(parsed_values.get("sheath_j0h_h")),
+        ar_star_density=_to_float(parsed_values.get("number_density_ar_star")),
+        ar_density=_to_float(parsed_values.get("number_density_ar")),
+        ar_plus_density=_to_float(parsed_values.get("number_density_ar_plus")),
+        e_density=_to_float(parsed_values.get("number_density_e")),
+        ar_plus_ion_flux=_to_float(parsed_values.get("ion_flux_ar_plus")),
+        ar_star_radical_flux=_to_float(parsed_values.get("radical_flux_ar_star")),
+        ar_radical_flux=_to_float(parsed_values.get("radical_flux_ar")),
+        ar_plus_avg_ion_energy=_to_float(parsed_values.get("avg_ion_energy_ar_plus")),
+    )
+
+
 def row_to_similar_log_data(row: SolverResult) -> SimilarLogData:
     return SimilarLogData(
         file_name=row.log_file_name,
@@ -171,14 +220,33 @@ def row_to_similar_log_data(row: SolverResult) -> SimilarLogData:
         ar_plus_avg_ion_energy=_to_float(row.avg_ion_energy_ar_plus),
     )
 
-def to_frontend_success_payload(session_id: int, log_id: int, chat_response: str, similar_rows: list[SolverResult]) -> dict:
+
+# 최종적으로 프론트에 반환할 질의응답 성공 응답을 만든다.
+# input_values는 사용자가 업로드한 solver.log를 parseLog로 파싱한 내부 key 기반 dict이다.
+# 프론트에서는 input_log_data와 similar_logs_data를 같은 key 구조로 비교해야 하므로,
+# input_values를 parsed_to_similar_log_data()로 변환해 input_log_data에 포함한다.
+def to_frontend_success_payload(
+    session_id: int,
+    log_id: int,
+    chat_response: str,
+    input_values: dict[str, str | None],
+    similar_rows: list[SolverResult],
+    *,
+    input_file_name: str = "uploaded_solver.log",
+) -> dict:
     response = AskQuestionResponse(
         status="success",
         data={
             "session_id": session_id,
             "log_id": log_id,
             "chat_response": chat_response,
+            # 업로드된 입력 데이터도 유사 데이터와 같은 DTO로 변환해 내려준다.
+            "input_log_data": parsed_to_similar_log_data(
+                input_values,
+                file_name=input_file_name,
+            ),
             "similar_logs_data": [row_to_similar_log_data(r) for r in similar_rows],
         },
     )
     return response.model_dump(by_alias=True)
+
