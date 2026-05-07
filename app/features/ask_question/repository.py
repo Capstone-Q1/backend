@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.models.query_response_log import QueryResponseLog
 from app.models.solver_result import SolverResult
-
+from app.models.chat_session import ChatSession
 
 def create_query_log(
     db: Session,
@@ -93,3 +93,36 @@ def update_query_response(
     db.commit()
     db.refresh(row)
     return row
+
+#기존 채팅방에 추가 질문할 때 사용
+def find_chat_session_by_id(db: Session, *, session_id: int, user_id: str) -> ChatSession | None:
+    return (
+        db.query(ChatSession)
+        .filter(
+            ChatSession.session_id == session_id,
+            ChatSession.user_id == user_id,
+        )
+        .first()
+    )
+
+#새 채팅방 생성
+def create_chat_session(db: Session, *, user_id: str, title: str) -> ChatSession:
+    now = datetime.now(timezone.utc)
+    row = ChatSession(
+        user_id=user_id,
+        title=title,
+        created_at=now,
+        updated_at=now,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row
+
+#마지막 채팅 시간 갱신
+def update_chat_session_updated_at(db: Session, *, session_id: int) -> None:
+    row = db.query(ChatSession).filter(ChatSession.session_id == session_id).first()
+    if row is None:
+        return
+    row.updated_at = datetime.now(timezone.utc)
+    db.commit()

@@ -3,17 +3,19 @@
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.orm import Session
 
-from app.core.deps import get_db
+from app.core.deps import get_db, get_current_user
 from app.features.ask_question.service import ask_question_service
+from app.models.user import User
 
 router = APIRouter()
 
 
-@router.post("/ask")
+@router.post("/query")
 async def ask_question(
     # 사용자/세션/질의는 multipart form-data로 받는다.
-    user_id: str = Form(...),
-    session_id: int = Form(...),
+    current_user: User = Depends(get_current_user),
+    #기존 채팅방이면 프론트가 보내고, 새 채팅방이면 안 보낼 수 있게 optional로 둠.
+    session_id: int | None = Form(default=None),
     query_text: str = Form(...),
     # solver.log 원본 파일 업로드.
     solver_log: UploadFile = File(...),
@@ -23,7 +25,7 @@ async def ask_question(
     
     return await ask_question_service(
         db,
-        user_id=user_id,
+        user_id=current_user.user_id,
         session_id=session_id,
         query_text=query_text,
         solver_log=solver_log,
