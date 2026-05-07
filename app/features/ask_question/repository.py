@@ -118,6 +118,28 @@ def find_chat_sessions_by_user_id(db: Session, *, user_id: str) -> list[ChatSess
         .all()
     )
 
+# 특정 채팅방의 질의응답 로그 목록 조회
+# 채팅방 상세 화면에 표시할 대화 내역을 질의 생성 시각 기준 오래된 순서로 조회한다.
+def find_query_logs_by_session_id(
+    db: Session,
+    *,
+    session_id: int,
+    user_id: str,
+) -> list[QueryResponseLog]:
+    return (
+        db.query(QueryResponseLog)
+        .filter(
+            QueryResponseLog.session_id == session_id,
+            QueryResponseLog.user_id == user_id,
+        )
+        .order_by(
+            QueryResponseLog.created_at.asc(),
+            QueryResponseLog.log_id.asc(),
+        )
+        .all()
+    )
+
+
 #새 채팅방 생성
 def create_chat_session(db: Session, *, user_id: str, title: str) -> ChatSession:
     now = datetime.now(timezone.utc)

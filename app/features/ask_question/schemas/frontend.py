@@ -84,6 +84,33 @@ class ChatSessionListResponse(BaseModel):
     data: list[ChatSessionListItem]
 
 
+# 채팅방 상세 조회에서 대화 1건을 표현하는 응답 스키마.
+# query_response_log 1행을 프론트엔드 채팅 메시지 형태로 반환할 때 사용.
+class ChatSessionDetailMessage(BaseModel):
+    log_id: int
+    query_text: str
+    chat_response: str | None
+    has_analysis: bool
+    created_at: datetime
+    response_at: datetime | None
+
+
+# 채팅방 상세 조회 응답의 data 스키마.
+# 채팅방 기본 정보와 해당 채팅방의 전체 질의응답 목록을 묶어 반환할 때 사용.
+class ChatSessionDetailData(BaseModel):
+    session_id: int
+    title: str
+    created_at: datetime
+    messages: list[ChatSessionDetailMessage]
+
+
+# 채팅방 상세 조회 성공 응답의 최상위 스키마.
+# 사이드바에서 채팅방을 클릭했을 때 채팅 영역에 표시할 전체 대화 내역을 반환할 때 사용.
+class ChatSessionDetailResponse(BaseModel):
+    status: Literal["success"] = "success"
+    data: ChatSessionDetailData
+
+
 # 에러 응답 공통 스키마.
 # 실패/예외 상황에서 error_code, error_message를 일관되게 반환할 때 사용.
 class ErrorResponse(BaseModel):

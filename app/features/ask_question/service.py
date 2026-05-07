@@ -32,10 +32,14 @@ from app.features.ask_question.repository import (
     update_chat_session_updated_at,
     find_chat_session_by_id,
     find_chat_sessions_by_user_id,
+    find_query_logs_by_session_id,
 )
 from app.features.ask_question.schemas.frontend import (
     ChatSessionListItem,
     ChatSessionListResponse,
+    ChatSessionDetailMessage,
+    ChatSessionDetailData,
+    ChatSessionDetailResponse,
 )
 
 async def ask_question_service(
@@ -152,4 +156,48 @@ def get_chat_sessions_service(db, *, user_id: str) -> ChatSessionListResponse:
             )
             for row in rows
         ]
+    )
+
+
+# 분석 그래프 데이터가 있는 질의응답인지 확인한다.
+# response_case_ids에 AI가 찾은 유사 로그 목록이 저장되어 있으면 그래프 카드 표시 대상으로 본다.
+def _has_analysis(response_case_ids: str | None) -> bool:
+    return response_case_ids not in (None, "", "[]")
+
+
+# 채팅방 상세 조회 서비스 레이어.
+# 현재 로그인한 사용자가 소유한 채팅방인지 확인한 뒤, 해당 채팅방의 전체 질의응답 내역을 조회한다.
+def get_chat_session_detail_service(db, *, user_id: str, session_id: int) -> ChatSessionDetailResponse:
+    chat_session = find_chat_session_by_id(
+        db,
+        session_id=session_id,
+        user_id=user_id,
+    )
+
+    if chat_session is None:
+        raise ChatSessionNotFoundException(session_id)
+
+    logs = find_query_logs_by_session_id(
+        db,
+        session_id=session_id,
+        user_id=user_id,
+    )
+
+    return ChatSessionDetailResponse(
+        data=ChatSessionDetailData(
+            session_id=chat_session.session_id,
+            title=chat_session.title,
+            created_at=chat_session.created_at,
+            messages=[
+                ChatSessionDetailMessage(
+                    log_id=log.log_id,
+                    query_text=log.query_text,
+                    chat_response=log.response_text,
+                    has_analysis=_has_analysis(log.response_case_ids),
+                    created_at=log.created_at,
+                    response_at=log.response_at,
+                )
+                for log in logs
+            ],
+        )
     )
