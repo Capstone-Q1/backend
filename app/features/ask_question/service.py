@@ -10,24 +10,67 @@
 # 2) AI 질의/응답 처리
 # 3) 유사 로그 상세 조회 후 프론트 응답 스키마로 변환
 from fastapi import UploadFile
-from app.features.ask_question.processors.parsing.ask_query import request_ai_answer, log_parsing
+
+from app.core.config import settings
+from app.features.ask_question.processors.parsing.ask_query import request_ai_answer
+from app.features.ask_question.processors.parsing.parse_log import parse_solver_log_text
+from app.features.ask_question.processors.validation import (
+    ValidationContext,
+    create_ask_question_validation_chain,
+)
 from app.features.ask_question.processors.utils.convert_to_json import (
     to_ai_request_payload,
     to_frontend_success_payload,
     to_query_solver_log_json,
 )
+from app.features.ask_question.exceptions import ChatSessionNotFoundException
 from app.features.ask_question.repository import (
     create_query_log,
+    create_chat_session,
     find_solver_results_by_log_file_names,
     update_query_response,
+    update_chat_session_updated_at,
+    find_chat_session_by_id,
 )
 
 
 async def ask_question_service(
-    db, *, user_id: str, session_id: int, query_text: str, solver_log: UploadFile
+    db, *, user_id: str, session_id: int | None, query_text: str, solver_log: UploadFile
 ) -> dict:
-    # 업로드된 solver.log(file)를 텍스트로 변환하고 핵심 파라미터를 파싱한다.
-    parsed = await log_parsing(solver_log = solver_log) 
+    
+    if session_id is None:
+        chat_session = create_chat_session(
+            db,
+            user_id=user_id,
+            title=query_text[:30],
+        )
+        session_id = chat_session.session_id
+    else:
+        chat_session = find_chat_session_by_id(
+            db,
+            session_id=session_id,
+            user_id=user_id,
+        )
+        if chat_session is None:
+            raise ChatSessionNotFoundException(session_id)
+
+
+    #문서의 parseLog 단계: solver.log 입력값을 검증하고 텍스트로 변환한 뒤 핵심 파라미터를 파싱한다.
+
+    file_bytes = await solver_log.read()
+
+    context = ValidationContext(
+        query_text=query_text,
+        filename=solver_log.filename,
+        file_bytes=file_bytes,
+    )
+
+    validation_chain = create_ask_question_validation_chain(
+        max_file_size_mb=settings.max_log_file_size_mb
+    )
+    validation_chain.validate(context)
+    
+    parsed = parse_solver_log_text(context.solver_log_text or "")
 
     # 사용자 질의 + 파싱 결과를 query_log에 먼저 저장해 추적 가능하게 만든다.
     query_log = create_query_log(
@@ -74,10 +117,17 @@ async def ask_question_service(
         similar_log_files=similar_logs, # log 넘버 (000.log) 
     )
 
+    # 채팅방의 마지막 대화 시간을 갱신한다.
+    update_chat_session_updated_at(db, session_id=session_id)
+
     # 최종 프론트 응답 스키마로 직렬화해 반환한다.
     return to_frontend_success_payload(
         session_id=session_id,
         log_id=query_log.log_id,
         chat_response=ai_result.data.chat_response,
+        # 사용자가 업로드한 solver.log에서 parseLog로 뽑은 값. 이게 input_log_data로 변환됨
+        input_values=parsed,
         similar_rows=ordered_rows,
+        # 프론트 응답에서 입력 데이터의 file_name으로 들어갈 값. 파일명이 없으면 기본값 사용
+        input_file_name=solver_log.filename or "uploaded_solver.log",
     )
