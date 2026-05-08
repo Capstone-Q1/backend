@@ -11,7 +11,7 @@ from app.models.user import User
 router = APIRouter()
 
 
-@router.post("/query")
+@router.post("/search")
 async def ask_question(
     # 사용자/세션/질의는 multipart form-data로 받는다.
     current_user: User = Depends(get_current_user),
