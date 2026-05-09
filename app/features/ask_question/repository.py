@@ -139,6 +139,16 @@ def find_query_logs_by_session_id(
         .all()
     )
 
+#해당 질의 로그 조회
+def find_query_log_by_id(db: Session, *, log_id: int, user_id: str) -> QueryResponseLog | None:
+    return (
+        db.query(QueryResponseLog)
+        .filter(
+            QueryResponseLog.log_id == log_id,
+            QueryResponseLog.user_id == user_id,
+        )
+        .first()
+    )
 
 #새 채팅방 생성
 def create_chat_session(db: Session, *, user_id: str, title: str) -> ChatSession:
@@ -161,3 +171,4 @@ def update_chat_session_updated_at(db: Session, *, session_id: int) -> None:
         return
     row.updated_at = datetime.now(timezone.utc)
     db.commit()
+
