@@ -222,17 +222,11 @@ def row_to_similar_log_data(row: SolverResult) -> SimilarLogData:
 
 
 # 최종적으로 프론트에 반환할 질의응답 성공 응답을 만든다.
-# input_values는 사용자가 업로드한 solver.log를 parseLog로 파싱한 내부 key 기반 dict이다.
-# 프론트에서는 input_log_data와 similar_logs_data를 같은 key 구조로 비교해야 하므로,
-# input_values를 parsed_to_similar_log_data()로 변환해 input_log_data에 포함한다.
 def to_frontend_success_payload(
     session_id: int,
     log_id: int,
     chat_response: str,
-    input_values: dict[str, str | None],
-    similar_rows: list[SolverResult],
-    *,
-    input_file_name: str = "uploaded_solver.log",
+    has_analysis: bool,
 ) -> dict:
     response = AskQuestionResponse(
         status="success",
@@ -240,12 +234,7 @@ def to_frontend_success_payload(
             "session_id": session_id,
             "log_id": log_id,
             "chat_response": chat_response,
-            # 업로드된 입력 데이터도 유사 데이터와 같은 DTO로 변환해 내려준다.
-            "input_log_data": parsed_to_similar_log_data(
-                input_values,
-                file_name=input_file_name,
-            ),
-            "similar_logs_data": [row_to_similar_log_data(r) for r in similar_rows],
+            "has_analysis": has_analysis,
         },
     )
     return response.model_dump(by_alias=True)
