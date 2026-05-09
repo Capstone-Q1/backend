@@ -27,7 +27,6 @@ from app.features.ask_question.exceptions import ChatSessionNotFoundException
 from app.features.ask_question.repository import (
     create_query_log,
     create_chat_session,
-    find_solver_results_by_log_file_names,
     update_query_response,
     update_chat_session_updated_at,
     find_chat_session_by_id,
@@ -109,16 +108,10 @@ async def ask_question_service(
 
     # AI 성공 시: 유사 로그 파일명 목록으로 solver_result 상세 데이터를 조회한다.
     similar_logs = ai_result.data.similar_logs
-    rows = find_solver_results_by_log_file_names(db, log_file_names=similar_logs) #repo 메서드
 
-    # DB 조회 결과(rows)는 순서가 보장되지 않으므로, 파일명 -> row 매핑을 먼저 만든다.
-    row_map = {r.log_file_name: r for r in rows}
-    # AI 추천 순서(similar_logs)대로 다시 정렬한다.
-    # DB에 없는 파일명은 `if x in row_map`으로 제외해 KeyError를 방지한다.
-    ordered_rows = [row_map[x] for x in similar_logs if x in row_map]
-
-    # AI 답변/유사 로그 목록을 query_log에 반영한다.
-    update_query_response(
+    # AI 답변과 AI가 찾은 유사 로그 파일명 목록을 DB에 저장한다.
+    # response_case_ids에 값이 있으면 나중에 분석 그래프 조회가 가능하다.
+    updated_query_log = update_query_response(
         db,
         log_id=query_log.log_id,
         response_text=ai_result.data.chat_response, # 자연어 응답
@@ -133,11 +126,9 @@ async def ask_question_service(
         session_id=session_id,
         log_id=query_log.log_id,
         chat_response=ai_result.data.chat_response,
-        # 사용자가 업로드한 solver.log에서 parseLog로 뽑은 값. 이게 input_log_data로 변환됨
-        input_values=parsed,
-        similar_rows=ordered_rows,
-        # 프론트 응답에서 입력 데이터의 file_name으로 들어갈 값. 파일명이 없으면 기본값 사용
-        input_file_name=solver_log.filename or "uploaded_solver.log",
+        # 채팅방 상세 조회와 같은 기준으로 분석 결과 존재 여부를 내려준다.
+        # 프론트는 true일 때 "분석 그래프 보기" 버튼을 표시한다.
+        has_analysis=_has_analysis(updated_query_log.response_case_ids),
     )
 
 

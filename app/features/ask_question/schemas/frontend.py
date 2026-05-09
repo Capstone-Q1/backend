@@ -48,10 +48,9 @@ class AskQuestionData(BaseModel):
     session_id: int
     log_id: int
     chat_response: str
-    # input_log_data는 사용자가 업로드한 solver.log의 파싱 결과
-    # SimilarLogData를 재사용하는 이유는 프론트가 입력 데이터와 유사 데이터를 같은 key로 비교하게 하려고
-    input_log_data: SimilarLogData
-    similar_logs_data: list[SimilarLogData]
+    # AI가 찾은 유사 로그가 있으면 true.
+    # 프론트는 이 값으로 "분석 그래프 보기" 버튼 표시 여부를 판단한다.
+    has_analysis: bool
 
 
 # ask_question 성공 응답의 최상위 스키마.
