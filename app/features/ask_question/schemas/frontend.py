@@ -60,6 +60,23 @@ class AskQuestionResponse(BaseModel): #최종적으로 프론트엔드에 반환
     data: AskQuestionData
 
 
+# 분석 그래프 조회 응답의 data 본문 스키마.
+# 질의응답 API에서는 has_analysis만 내려주고,
+# 프론트가 분석 그래프 보기 버튼을 누르면 log_id 기준으로 이 데이터를 조회한다.
+class AnalysisData(BaseModel):
+    log_id: int
+    input_log_data: SimilarLogData
+    similar_logs_data: list[SimilarLogData]
+
+
+# 분석 그래프 조회 성공 응답 스키마.
+# input_log_data는 사용자가 업로드했던 데이터이고,
+# similar_logs_data는 AI가 찾은 유사 로그들의 상세 데이터이다.
+class AnalysisResponse(BaseModel):
+    status: Literal["success"] = "success"
+    data: AnalysisData
+
+
 # ask_question 요청 바디 입력 스키마.
 # 클라이언트가 보낸 session_id, query_text를 검증할 때 사용.
 class AskQuestionForm(BaseModel):
