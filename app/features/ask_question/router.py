@@ -5,13 +5,13 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_db, get_current_user
 from app.features.ask_question.service import ask_question_service, get_chat_sessions_service, get_chat_session_detail_service, get_analysis_data_service
-from app.features.ask_question.schemas.frontend import ChatSessionListResponse, ChatSessionDetailResponse, AnalysisResponse
+from app.features.ask_question.schemas.frontend import ChatSessionListResponse, ChatSessionDetailResponse, AnalysisResponse, AskQuestionResponse
 from app.models.user import User
 
 router = APIRouter()
 
 
-@router.post("/search")
+@router.post("/search", response_model=AskQuestionResponse)
 async def ask_question(
     # 사용자/세션/질의는 multipart form-data로 받는다.
     current_user: User = Depends(get_current_user),
@@ -59,6 +59,7 @@ def get_chat_session_detail(
         user_id=current_user.user_id,
         session_id=session_id,
     )
+
 
 # 분석 그래프 조회 API.
 # 질의응답 API에서는 has_analysis만 내려주고,
