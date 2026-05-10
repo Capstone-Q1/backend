@@ -12,8 +12,11 @@ from app.features.ask_question.schemas.ai import AiQuestionResponse, parse_ai_re
 # HTTP 실패(4xx/5xx) 또는 네트워크 예외가 나면 AiRequestFailedException으로 래핑한다.
 # OOD 데이터는 422로 오기 때문에 200,422는 정상 응답으로 처리
 async def request_ai_answer(payload: dict) -> AiQuestionResponse: 
+    #print("request_ai_answer payload:", payload) #디버깅용
+    print
     try:        
         # timeout은 설정값을 사용해 요청 지연을 제한한다.
+        print("AI request timeout:", settings.ai_request_timeout) #디버깅용
         async with httpx.AsyncClient(timeout=settings.ai_request_timeout) as client:
             resp = await client.post(
                 # Ai 서버에 payload를 JSON body로 전송한다.
@@ -27,6 +30,7 @@ async def request_ai_answer(payload: dict) -> AiQuestionResponse:
     # AI 비즈니스 실패(422)도 정상 파싱 경로로 보낸다.
     if resp.status_code in (200, 422):
         try:
+            print("AI response JSON:", resp.json()) #디버깅용
             return parse_ai_response(resp.json())
         except Exception as e:
             #응답은 받았는데, 응답 본문을 우리 스키마로 해석하지 못한 경우 -> 커스텀 예외 통일이 아니라 각각 만들어줘야함
