@@ -9,6 +9,8 @@
 # 1) solver.log 파싱 + 질의 로그 저장
 # 2) AI 질의/응답 처리
 # 3) 유사 로그 상세 조회 후 프론트 응답 스키마로 변환
+import json
+
 from fastapi import UploadFile
 
 from app.core.config import settings
@@ -22,17 +24,20 @@ from app.features.ask_question.processors.utils.convert_to_json import (
     to_ai_request_payload,
     to_frontend_success_payload,
     to_query_solver_log_json,
+    parsed_to_similar_log_data,
+    row_to_similar_log_data,
 )
 from app.features.ask_question.exceptions import ChatSessionNotFoundException
 from app.features.ask_question.repository import (
     create_query_log,
     create_chat_session,
-    find_solver_results_by_log_file_names,
     update_query_response,
     update_chat_session_updated_at,
     find_chat_session_by_id,
     find_chat_sessions_by_user_id,
     find_query_logs_by_session_id,
+    find_query_log_by_id,
+    find_solver_results_by_log_file_names,
 )
 from app.features.ask_question.schemas.frontend import (
     ChatSessionListItem,
@@ -40,6 +45,8 @@ from app.features.ask_question.schemas.frontend import (
     ChatSessionDetailMessage,
     ChatSessionDetailData,
     ChatSessionDetailResponse,
+    AnalysisResponse,
+    AnalysisData,
 )
 
 async def ask_question_service(
@@ -109,16 +116,10 @@ async def ask_question_service(
 
     # AI 성공 시: 유사 로그 파일명 목록으로 solver_result 상세 데이터를 조회한다.
     similar_logs = ai_result.data.similar_logs
-    rows = find_solver_results_by_log_file_names(db, log_file_names=similar_logs) #repo 메서드
 
-    # DB 조회 결과(rows)는 순서가 보장되지 않으므로, 파일명 -> row 매핑을 먼저 만든다.
-    row_map = {r.log_file_name: r for r in rows}
-    # AI 추천 순서(similar_logs)대로 다시 정렬한다.
-    # DB에 없는 파일명은 `if x in row_map`으로 제외해 KeyError를 방지한다.
-    ordered_rows = [row_map[x] for x in similar_logs if x in row_map]
-
-    # AI 답변/유사 로그 목록을 query_log에 반영한다.
-    update_query_response(
+    # AI 답변과 AI가 찾은 유사 로그 파일명 목록을 DB에 저장한다.
+    # response_case_ids에 값이 있으면 나중에 분석 그래프 조회가 가능하다.
+    updated_query_log = update_query_response(
         db,
         log_id=query_log.log_id,
         response_text=ai_result.data.chat_response, # 자연어 응답
@@ -133,11 +134,9 @@ async def ask_question_service(
         session_id=session_id,
         log_id=query_log.log_id,
         chat_response=ai_result.data.chat_response,
-        # 사용자가 업로드한 solver.log에서 parseLog로 뽑은 값. 이게 input_log_data로 변환됨
-        input_values=parsed,
-        similar_rows=ordered_rows,
-        # 프론트 응답에서 입력 데이터의 file_name으로 들어갈 값. 파일명이 없으면 기본값 사용
-        input_file_name=solver_log.filename or "uploaded_solver.log",
+        # 채팅방 상세 조회와 같은 기준으로 분석 결과 존재 여부를 내려준다.
+        # 프론트는 true일 때 "분석 그래프 보기" 버튼을 표시한다.
+        has_analysis=_has_analysis(updated_query_log.response_case_ids),
     )
 
 
@@ -157,12 +156,6 @@ def get_chat_sessions_service(db, *, user_id: str) -> ChatSessionListResponse:
             for row in rows
         ]
     )
-
-
-# 분석 그래프 데이터가 있는 질의응답인지 확인한다.
-# response_case_ids에 AI가 찾은 유사 로그 목록이 저장되어 있으면 그래프 카드 표시 대상으로 본다.
-def _has_analysis(response_case_ids: str | None) -> bool:
-    return response_case_ids not in (None, "", "[]")
 
 
 # 채팅방 상세 조회 서비스 레이어.
@@ -201,3 +194,61 @@ def get_chat_session_detail_service(db, *, user_id: str, session_id: int) -> Cha
             ],
         )
     )
+
+
+def get_analysis_data_service(db, *, user_id: str, log_id: int):
+    # log_id가 현재 로그인한 사용자의 질의 기록인지 먼저 확인한다.
+    # 이렇게 해야 다른 사용자의 분석 데이터를 log_id만으로 조회하는 문제를 막을 수 있다.
+    query_log = find_query_log_by_id(
+        db,
+        log_id=log_id,
+        user_id=user_id,
+    )
+
+    if query_log is None:
+        # log_id 조회 실패 전용 예외로 분리 예정.
+        # 지금은 시간상 기존 예외 흐름을 재사용해 요청을 차단한다.
+        raise ChatSessionNotFoundException(log_id)
+
+    # query_solver_log에는 사용자가 업로드한 solver.log를 파싱한 결과가 JSON 문자열로 저장되어 있다.
+    # 프론트 분석 화면에서는 이 값을 AI가 찾은 유사 로그와 같은 DTO 구조로 비교해야 한다.
+    input_log_dict = json.loads(query_log.query_solver_log)
+
+    # response_case_ids에는 AI가 찾은 유사 로그 파일명 목록이 JSON 문자열로 저장되어 있다.
+    # 예: ["003.log", "007.log", "045.log"]
+    similar_log_file_names = json.loads(query_log.response_case_ids or "[]")
+
+    similar_log_rows = find_solver_results_by_log_file_names(
+        db,
+        log_file_names=similar_log_file_names,
+    )
+
+    # DB 조회 결과는 순서가 보장되지 않을 수 있으므로,
+    # AI가 반환한 파일명 순서대로 다시 정렬해서 프론트에 내려준다.
+    row_by_file_name = {
+        row.log_file_name: row
+        for row in similar_log_rows
+    }
+
+    ordered_similar_log_rows = [
+        row_by_file_name[file_name]
+        for file_name in similar_log_file_names
+        if file_name in row_by_file_name
+    ]
+
+    return AnalysisResponse(
+        data=AnalysisData(
+            log_id=query_log.log_id,
+            input_log_data=parsed_to_similar_log_data(input_log_dict),
+            similar_logs_data=[
+                row_to_similar_log_data(row)
+                for row in ordered_similar_log_rows
+            ],
+        )
+    )
+
+
+# 분석 그래프 데이터가 있는 질의응답인지 확인한다.
+# response_case_ids에 AI가 찾은 유사 로그 목록이 저장되어 있으면 그래프 카드 표시 대상으로 본다.
+def _has_analysis(response_case_ids: str | None) -> bool:
+    return response_case_ids not in (None, "", "[]")
