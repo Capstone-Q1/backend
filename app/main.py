@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.db import Base, engine
@@ -10,16 +11,26 @@ from app.features.auth.router import router as auth_router
 from app.features.ask_question.router import router as ask_question_router
 
 # 중요: create_all 전에 모델이 import되어 있어야 metadata에 등록됨
-# 모델을 app/models 패키지로 둘 경우
 from app.models import *  # noqa: F401
-
-# 만약 feature 내부에 models.py를 둘 경우 아래로 교체
-# from app.features.ask_question import models  # noqa: F401
 
 
 app = FastAPI(
     title=settings.app_name,
     debug=settings.debug,
+)
+
+# 프론트 주소를 명시적으로 허용
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,  # 쿠키 인증이면 True로 변경
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -53,7 +64,6 @@ app.include_router(
     prefix="/api/v1/ask-question",
     tags=["Ask Question"],
 )
-
 
 app.include_router(
     auth_router,

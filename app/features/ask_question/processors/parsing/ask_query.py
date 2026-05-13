@@ -13,7 +13,7 @@ from app.features.ask_question.schemas.ai import AiQuestionResponse, parse_ai_re
 # OOD 데이터는 422로 오기 때문에 200,422는 정상 응답으로 처리
 async def request_ai_answer(payload: dict) -> AiQuestionResponse: 
     #print("request_ai_answer payload:", payload) #디버깅용
-    print
+    print("ai_server_url:", settings.ai_server_url) #디버깅용
     try:        
         # timeout은 설정값을 사용해 요청 지연을 제한한다.
         print("AI request timeout:", settings.ai_request_timeout) #디버깅용
