@@ -19,18 +19,13 @@ app = FastAPI(
     debug=settings.debug,
 )
 
-# 프론트 주소를 명시적으로 허용
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
-
+# 프론트 Origin 허용 (현재 구조: localhost:3000 + Authorization 헤더)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,  # 쿠키 인증이면 True로 변경
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=False,  # 쿠키 미사용 구조
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 
