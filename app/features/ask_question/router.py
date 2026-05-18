@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_db, get_current_user
-from app.features.ask_question.service import ask_question_service, get_chat_sessions_service, get_chat_session_detail_service
-from app.features.ask_question.schemas.frontend import ChatSessionListResponse, ChatSessionDetailResponse
+from app.features.ask_question.service import ask_question_service, get_chat_sessions_service, get_chat_session_detail_service, get_analysis_data_service, create_chat_session_service
+from app.features.ask_question.schemas.frontend import ChatSessionListResponse, ChatSessionDetailResponse, AnalysisResponse, AskQuestionResponse, ChatSessionCreateResponse
 from app.models.user import User
 
 router = APIRouter()
@@ -58,4 +58,34 @@ def get_chat_session_detail(
         db,
         user_id=current_user.user_id,
         session_id=session_id,
+    )
+
+
+# 분석 그래프 조회 API.
+# 질의응답 API에서는 has_analysis만 내려주고,
+# 프론트가 분석 그래프 보기 버튼을 누르면 log_id 기준으로 입력 데이터와 AI 유사 로그 데이터를 조회한다.
+@router.get("/logs/{log_id}/analysis", response_model=AnalysisResponse)
+def get_analysis_data(
+    log_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return get_analysis_data_service(
+        db,
+        user_id=current_user.user_id,
+        log_id=log_id,
+    )
+
+
+# 새 채팅방 생성 API.
+# 프론트가 새 채팅을 시작할 때 먼저 호출하여 session_id를 발급받는다.
+# 이 API에서는 채팅방 row만 만들고, 실제 질의응답 처리는 /search API에서 수행한다.
+@router.post("/sessions", response_model=ChatSessionCreateResponse)
+def create_chat_session_api(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return create_chat_session_service(
+        db,
+        user_id=current_user.user_id,
     )
