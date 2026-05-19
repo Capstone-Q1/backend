@@ -112,7 +112,12 @@ async def ask_question_service(
     )
 
     # AI 요청 포맷으로 변환해 질의하고, 성공/실패 스키마로 응답을 받는다.
-    ai_payload = to_ai_request_payload(query_text, parsed)          # 수정 필요
+    ai_payload = to_ai_request_payload(
+        query_text, 
+        parsed,
+        parameters=selected_parameters,
+        include_data=has_solver_log,
+    )
     ai_result = await request_ai_answer(ai_payload)                 # 수정 필요
 
     # AI 실패 시: 실패 메시지를 DB에 남기고 에러 응답을 즉시 반환한다.

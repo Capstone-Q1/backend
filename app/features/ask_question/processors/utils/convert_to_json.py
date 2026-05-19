@@ -107,10 +107,19 @@ def build_ai_data(values: dict[str, str | None]) -> dict[str, Any]:
     }
 
 
-def to_ai_request_payload(query_text: str, parsed_values: dict[str, str | None]) -> dict[str, Any]:
+# parameters는 사용자가 선택한 셋업매뉴얼 기준 파라미터명 목록이다.
+# solver_log가 없는 요청은 data를 null로 보내기 위해 include_data로 제어한다.
+def to_ai_request_payload(
+        query_text: str, 
+        parsed_values: dict[str, str | None],
+        *,
+        parameters: list[str] | None = None,
+        include_data: bool = True,
+) -> dict[str, Any]:
     req = AiQuestionRequest(
         query_text=query_text,
-        data=build_ai_data(parsed_values),
+        parameters=parameters or [],
+        data=build_ai_data(parsed_values) if include_data else None,
     )
     return req.model_dump(by_alias=True, exclude_none=False) # json으로 변환
 
