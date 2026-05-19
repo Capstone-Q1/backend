@@ -79,7 +79,8 @@ async def ask_question_service(
     # JSON 배열 문자열(["Pressure","Power1h"])과 콤마 문자열(Pressure,Power1h)을 모두 허용한다.
     if parameters:
         try:
-            selected_parameters = json.loads(parameters)
+            val = json.loads(parameters)
+            selected_parameters = val if isinstance(val, list) else [str(val)]
         except json.JSONDecodeError:
             selected_parameters = [
                 parameter.strip()
