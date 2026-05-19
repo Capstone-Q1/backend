@@ -127,7 +127,7 @@ async def ask_question_service(
         parameters=selected_parameters,
         include_data=has_solver_log,
     )
-    ai_result = await request_ai_answer(ai_payload)                 # 수정 필요
+    ai_result = await request_ai_answer(ai_payload)
 
     # AI 실패 시: 실패 메시지를 DB에 남기고 에러 응답을 즉시 반환한다.
     if ai_result.status == "error":
