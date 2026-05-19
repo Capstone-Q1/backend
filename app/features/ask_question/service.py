@@ -9,6 +9,8 @@
 # 1) solver.log 파싱 + 질의 로그 저장
 # 2) AI 질의/응답 처리
 # 3) 유사 로그 상세 조회 후 프론트 응답 스키마로 변환
+import json
+
 from fastapi import UploadFile
 
 from app.core.config import settings
@@ -22,6 +24,8 @@ from app.features.ask_question.processors.utils.convert_to_json import (
     to_ai_request_payload,
     to_frontend_success_payload,
     to_query_solver_log_json,
+    parsed_to_similar_log_data,
+    row_to_similar_log_data,
 )
 from app.features.ask_question.exceptions import ChatSessionNotFoundException
 from app.features.ask_question.repository import (
@@ -30,8 +34,22 @@ from app.features.ask_question.repository import (
     update_query_response,
     update_chat_session_updated_at,
     find_chat_session_by_id,
+    find_chat_sessions_by_user_id,
+    find_query_logs_by_session_id,
+    find_query_log_by_id,
+    find_solver_results_by_log_file_names,
 )
-
+from app.features.ask_question.schemas.frontend import (
+    ChatSessionListItem,
+    ChatSessionListResponse,
+    ChatSessionDetailMessage,
+    ChatSessionDetailData,
+    ChatSessionDetailResponse,
+    AnalysisResponse,
+    AnalysisData,
+    ChatSessionCreateData,
+    ChatSessionCreateResponse,
+)
 
 async def ask_question_service(
     db, *, user_id: str, session_id: int | None, query_text: str, solver_log: UploadFile
@@ -121,4 +139,135 @@ async def ask_question_service(
         # 채팅방 상세 조회와 같은 기준으로 분석 결과 존재 여부를 내려준다.
         # 프론트는 true일 때 "분석 그래프 보기" 버튼을 표시한다.
         has_analysis=_has_analysis(updated_query_log.response_case_ids),
+    )
+
+
+# 채팅방 목록 조회 서비스 레이어.
+# 현재 로그인한 사용자의 채팅방 목록을 조회하고 프론트엔드 응답 스키마로 변환한다.
+def get_chat_sessions_service(db, *, user_id: str) -> ChatSessionListResponse:
+    rows = find_chat_sessions_by_user_id(db, user_id=user_id)
+
+    return ChatSessionListResponse(
+        data=[
+            ChatSessionListItem(
+                session_id=row.session_id,
+                title=row.title,
+                created_at=row.created_at,
+                updated_at=row.updated_at,
+            )
+            for row in rows
+        ]
+    )
+
+
+# 채팅방 상세 조회 서비스 레이어.
+# 현재 로그인한 사용자가 소유한 채팅방인지 확인한 뒤, 해당 채팅방의 전체 질의응답 내역을 조회한다.
+def get_chat_session_detail_service(db, *, user_id: str, session_id: int) -> ChatSessionDetailResponse:
+    chat_session = find_chat_session_by_id(
+        db,
+        session_id=session_id,
+        user_id=user_id,
+    )
+
+    if chat_session is None:
+        raise ChatSessionNotFoundException(session_id)
+
+    logs = find_query_logs_by_session_id(
+        db,
+        session_id=session_id,
+        user_id=user_id,
+    )
+
+    return ChatSessionDetailResponse(
+        data=ChatSessionDetailData(
+            session_id=chat_session.session_id,
+            title=chat_session.title,
+            created_at=chat_session.created_at,
+            messages=[
+                ChatSessionDetailMessage(
+                    log_id=log.log_id,
+                    query_text=log.query_text,
+                    chat_response=log.response_text,
+                    has_analysis=_has_analysis(log.response_case_ids),
+                    created_at=log.created_at,
+                    response_at=log.response_at,
+                )
+                for log in logs
+            ],
+        )
+    )
+
+
+def get_analysis_data_service(db, *, user_id: str, log_id: int):
+    # log_id가 현재 로그인한 사용자의 질의 기록인지 먼저 확인한다.
+    # 이렇게 해야 다른 사용자의 분석 데이터를 log_id만으로 조회하는 문제를 막을 수 있다.
+    query_log = find_query_log_by_id(
+        db,
+        log_id=log_id,
+        user_id=user_id,
+    )
+
+    if query_log is None:
+        # log_id 조회 실패 전용 예외로 분리 예정.
+        # 지금은 시간상 기존 예외 흐름을 재사용해 요청을 차단한다.
+        raise ChatSessionNotFoundException(log_id)
+
+    # query_solver_log에는 사용자가 업로드한 solver.log를 파싱한 결과가 JSON 문자열로 저장되어 있다.
+    # 프론트 분석 화면에서는 이 값을 AI가 찾은 유사 로그와 같은 DTO 구조로 비교해야 한다.
+    input_log_dict = json.loads(query_log.query_solver_log)
+
+    # response_case_ids에는 AI가 찾은 유사 로그 파일명 목록이 JSON 문자열로 저장되어 있다.
+    # 예: ["003.log", "007.log", "045.log"]
+    similar_log_file_names = json.loads(query_log.response_case_ids or "[]")
+
+    similar_log_rows = find_solver_results_by_log_file_names(
+        db,
+        log_file_names=similar_log_file_names,
+    )
+
+    # DB 조회 결과는 순서가 보장되지 않을 수 있으므로,
+    # AI가 반환한 파일명 순서대로 다시 정렬해서 프론트에 내려준다.
+    row_by_file_name = {
+        row.log_file_name: row
+        for row in similar_log_rows
+    }
+
+    ordered_similar_log_rows = [
+        row_by_file_name[file_name]
+        for file_name in similar_log_file_names
+        if file_name in row_by_file_name
+    ]
+
+    return AnalysisResponse(
+        data=AnalysisData(
+            log_id=query_log.log_id,
+            input_log_data=parsed_to_similar_log_data(input_log_dict),
+            similar_logs_data=[
+                row_to_similar_log_data(row)
+                for row in ordered_similar_log_rows
+            ],
+        )
+    )
+
+
+# 분석 그래프 데이터가 있는 질의응답인지 확인한다.
+# response_case_ids에 AI가 찾은 유사 로그 목록이 저장되어 있으면 그래프 카드 표시 대상으로 본다.
+def _has_analysis(response_case_ids: str | None) -> bool:
+    return response_case_ids not in (None, "", "[]")
+
+
+# 새 채팅방 생성 서비스.
+# 이 단계에서는 빈 채팅방만 만들고, 질의 저장/solver.log 파싱/AI 호출은 하지 않는다.
+# 실제 채팅방 제목은 첫 질의가 들어왔을 때 query_text를 기준으로 갱신할 예정이다.
+def create_chat_session_service(db, *, user_id: str) -> ChatSessionCreateResponse:
+    chat_session = create_chat_session(
+        db,
+        user_id=user_id,
+        title="새 채팅",
+    )
+
+    return ChatSessionCreateResponse(
+        data=ChatSessionCreateData(
+            session_id=chat_session.session_id,
+        )
     )

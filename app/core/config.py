@@ -29,28 +29,28 @@ class Settings(BaseSettings):
 
     # AI 서버 주소
     # 백엔드에서 AI 서버로 요청 보낼 때 사용한다.
-    ai_server_url: str = "http://localhost:8001"
+    ai_server_url: str 
 
     # AI 서버 응답 대기 시간
     # 30초 안에 응답이 없으면 timeout 처리할 수 있다.
-    ai_request_timeout: int = 30
+    ai_request_timeout: int 
 
     # solver.log 파일 최대 업로드 크기
     # 나중에 파일 업로드 검증에서 사용한다.
-    max_log_file_size_mb: int = 5
+    max_log_file_size_mb: int 
 
     # JWT 서명에 사용할 비밀키
     # 스프링의 jwt.secret 같은 설정값이다.
     jwt_secret_key: str
 
     # JWT 서명 알고리즘
-    jwt_algorithm: str = "HS256"
+    jwt_algorithm: str 
 
     # access token 만료 시간(분)
-    access_token_expire_minutes: int = 60
+    access_token_expire_minutes: int 
 
     # refresh token 만료 기간(일)
-    refresh_token_expire_days: int = 14
+    refresh_token_expire_days: int 
 
     # Settings 클래스가 .env 파일을 읽는 방식 설정
     model_config = SettingsConfigDict(
