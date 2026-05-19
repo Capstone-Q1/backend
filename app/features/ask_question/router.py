@@ -18,8 +18,11 @@ async def ask_question(
     #기존 채팅방이면 프론트가 보내고, 새 채팅방이면 안 보낼 수 있게 optional로 둠.
     session_id: int | None = Form(default=None),
     query_text: str = Form(...),
-    # solver.log 원본 파일 업로드.
-    solver_log: UploadFile = File(...),
+    # parameters는 선택 입력이다. JSON 문자열 배열로 받으며, 없으면 빈 리스트로 처리한다.
+    # 예: ["Pressure","Power1h","Ion Flux"]
+    parameters: str | None = Form(default=None),
+    # solver_log는 선택 입력이다. 파일이 없으면 서비스에서 로그 파싱/검증을 건너뛴다.
+    solver_log: UploadFile | None = File(default=None),
     # 요청 단위 DB 세션 주입.
     db: Session = Depends(get_db),
 ):
@@ -29,6 +32,7 @@ async def ask_question(
         user_id=current_user.user_id,
         session_id=session_id,
         query_text=query_text,
+        parameters=parameters,
         solver_log=solver_log,
     )
 

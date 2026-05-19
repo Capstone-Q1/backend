@@ -52,7 +52,13 @@ from app.features.ask_question.schemas.frontend import (
 )
 
 async def ask_question_service(
-    db, *, user_id: str, session_id: int | None, query_text: str, solver_log: UploadFile
+    db, 
+    *, 
+    user_id: str, 
+    session_id: int | None, 
+    query_text: str, 
+    parameters: str | None,
+    solver_log: UploadFile | None,
 ) -> dict:
     
     if session_id is None:
@@ -71,23 +77,30 @@ async def ask_question_service(
         if chat_session is None:
             raise ChatSessionNotFoundException(session_id)
 
+    # parameters는 multipart/form-data에서 JSON 문자열 배열로 전달된다.
+    # 값이 없으면 AI에는 빈 리스트를 전달한다.
+    selected_parameters = json.loads(parameters) if parameters else []
 
-    #문서의 parseLog 단계: solver.log 입력값을 검증하고 텍스트로 변환한 뒤 핵심 파라미터를 파싱한다.
+    # solver_log가 있는 요청만 기존 검증/파싱 체인을 태운다.
+    # validation chain 자체는 일단 수정하지 않고 기능이 정상 작동하면 수정한다. (추후 수정 예정)
+    parsed = {}
+    has_solver_log = solver_log is not None and bool(solver_log.filename)
 
-    file_bytes = await solver_log.read()
+    if has_solver_log:
+        file_bytes = await solver_log.read()
 
-    context = ValidationContext(
-        query_text=query_text,
-        filename=solver_log.filename,
-        file_bytes=file_bytes,
-    )
+        context = ValidationContext(
+            query_text=query_text,
+            filename=solver_log.filename,
+            file_bytes=file_bytes,
+        )
 
-    validation_chain = create_ask_question_validation_chain(
-        max_file_size_mb=settings.max_log_file_size_mb
-    )
-    validation_chain.validate(context)
-    
-    parsed = parse_solver_log_text(context.solver_log_text or "")
+        validation_chain = create_ask_question_validation_chain(
+            max_file_size_mb=settings.max_log_file_size_mb
+        )
+        validation_chain.validate(context)
+
+        parsed = parse_solver_log_text(context.solver_log_text or "")
 
     # 사용자 질의 + 파싱 결과를 query_log에 먼저 저장해 추적 가능하게 만든다.
     query_log = create_query_log(
