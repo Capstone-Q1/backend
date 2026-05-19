@@ -17,6 +17,7 @@ def create_query_log(
     session_id: int,
     query_text: str,
     query_solver_log: str,
+    query_parameters: str,
 ) -> QueryResponseLog:
     """
     [역할]
@@ -30,6 +31,7 @@ def create_query_log(
         session_id=session_id,
         query_text=query_text,
         query_solver_log=query_solver_log,
+        query_parameters=query_parameters,
     )
     db.add(row)
     db.commit()
@@ -67,6 +69,7 @@ def update_query_response(
     log_id: int,
     response_text: str,
     similar_log_files: list[str],
+    important_parameters: list[str] | None = None,
 ) -> QueryResponseLog:
     """
     [역할]
@@ -88,6 +91,7 @@ def update_query_response(
 
     row.response_text = response_text
     row.response_case_ids = json.dumps(similar_log_files, ensure_ascii=False)
+    row.important_parameters = json.dumps(important_parameters or [], ensure_ascii=False)
     row.response_at = datetime.now(timezone.utc)
 
     db.commit()

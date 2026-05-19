@@ -102,13 +102,14 @@ async def ask_question_service(
 
         parsed = parse_solver_log_text(context.solver_log_text or "")
 
-    # 사용자 질의 + 파싱 결과를 query_log에 먼저 저장해 추적 가능하게 만든다.
+    # 사용자 질의 + 파싱 결과 + 파라미터를 query_log에 먼저 저장해 추적 가능하게 만든다.
     query_log = create_query_log(
         db,
         user_id=user_id,
         session_id=session_id,
         query_text=query_text,
         query_solver_log=to_query_solver_log_json(parsed),
+        query_parameters=json.dumps(selected_parameters, ensure_ascii=False),
     )
 
     # AI 요청 포맷으로 변환해 질의하고, 성공/실패 스키마로 응답을 받는다.
@@ -127,6 +128,7 @@ async def ask_question_service(
             log_id=query_log.log_id,
             response_text=ai_result.message,
             similar_log_files=[],
+            important_parameters=[],
         )
         return {
             "status": "error",
@@ -136,6 +138,7 @@ async def ask_question_service(
 
     # AI 성공 시: 유사 로그 파일명 목록으로 solver_result 상세 데이터를 조회한다.
     similar_logs = ai_result.data.similar_logs
+    important_parameters = ai_result.data.important_parameters
 
     # AI 답변과 AI가 찾은 유사 로그 파일명 목록을 DB에 저장한다.
     # response_case_ids에 값이 있으면 나중에 분석 그래프 조회가 가능하다.
@@ -143,7 +146,8 @@ async def ask_question_service(
         db,
         log_id=query_log.log_id,
         response_text=ai_result.data.chat_response, # 자연어 응답
-        similar_log_files=similar_logs, # log 넘버 (000.log) 
+        similar_log_files=similar_logs, # log 넘버 (000.log)
+        important_parameters=important_parameters, 
     )
 
     # 채팅방의 마지막 대화 시간을 갱신한다.
