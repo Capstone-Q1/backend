@@ -75,9 +75,19 @@ async def ask_question_service(
         if chat_session is None:
             raise ChatSessionNotFoundException(session_id)
 
-    # parameters는 multipart/form-data에서 JSON 문자열 배열로 전달된다.
-    # 값이 없으면 AI에는 빈 리스트를 전달한다.
-    selected_parameters = json.loads(parameters) if parameters else []
+    # parameters는 선택 입력이다.
+    # JSON 배열 문자열(["Pressure","Power1h"])과 콤마 문자열(Pressure,Power1h)을 모두 허용한다.
+    if parameters:
+        try:
+            selected_parameters = json.loads(parameters)
+        except json.JSONDecodeError:
+            selected_parameters = [
+                parameter.strip()
+                for parameter in parameters.split(",")
+                if parameter.strip()
+            ]
+    else:
+        selected_parameters = []
 
     # solver_log가 있는 요청만 기존 검증/파싱 체인을 태운다.
     # validation chain 자체는 일단 수정하지 않고 기능이 정상 작동하면 수정한다. (추후 수정 예정)
