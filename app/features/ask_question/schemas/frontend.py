@@ -82,7 +82,10 @@ class AnalysisResponse(BaseModel):
 class AskQuestionForm(BaseModel):
     session_id: int | None = Field(default=None, description="기존 채팅방이면 전달")
     query_text: str = Field(min_length=1, description="사용자 자연어 질의")
-
+    parameters: list[str] = Field(
+        default_factory=list,
+        description="사용자가 선택한 셋업매뉴얼 기준 파라미터명 목록",
+    )
 
 # 채팅방 목록 1건의 응답 스키마.
 # 사이드바 대화 히스토리에 표시할 채팅방 id, 제목, 생성 시각, 마지막 대화 시각을 반환할 때 사용.
