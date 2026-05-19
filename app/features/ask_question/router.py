@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_db, get_current_user
-from app.features.ask_question.service import ask_question_service, get_chat_sessions_service, get_chat_session_detail_service, get_analysis_data_service, create_chat_session_service
-from app.features.ask_question.schemas.frontend import ChatSessionListResponse, ChatSessionDetailResponse, AnalysisResponse, AskQuestionResponse, ChatSessionCreateResponse
+from app.features.ask_question.service import ask_question_service, get_chat_sessions_service, get_chat_session_detail_service, get_analysis_data_service
+from app.features.ask_question.schemas.frontend import ChatSessionListResponse, ChatSessionDetailResponse, AnalysisResponse, AskQuestionResponse
 from app.models.user import User
 
 router = APIRouter()
@@ -18,8 +18,11 @@ async def ask_question(
     #기존 채팅방이면 프론트가 보내고, 새 채팅방이면 안 보낼 수 있게 optional로 둠.
     session_id: int | None = Form(default=None),
     query_text: str = Form(...),
-    # solver.log 원본 파일 업로드.
-    solver_log: UploadFile = File(...),
+    # parameters는 선택 입력이다. JSON 문자열 배열로 받으며, 없으면 빈 리스트로 처리한다.
+    # 예: ["Pressure","Power1h","Ion Flux"]
+    parameters: str | None = Form(default=None),
+    # solver_log는 선택 입력이다. 파일이 없으면 서비스에서 로그 파싱/검증을 건너뛴다.
+    solver_log: UploadFile | None = File(default=None),
     # 요청 단위 DB 세션 주입.
     db: Session = Depends(get_db),
 ):
@@ -29,6 +32,7 @@ async def ask_question(
         user_id=current_user.user_id,
         session_id=session_id,
         query_text=query_text,
+        parameters=parameters,
         solver_log=solver_log,
     )
 
@@ -76,16 +80,3 @@ def get_analysis_data(
         log_id=log_id,
     )
 
-
-# 새 채팅방 생성 API.
-# 프론트가 새 채팅을 시작할 때 먼저 호출하여 session_id를 발급받는다.
-# 이 API에서는 채팅방 row만 만들고, 실제 질의응답 처리는 /search API에서 수행한다.
-@router.post("/sessions", response_model=ChatSessionCreateResponse)
-def create_chat_session_api(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    return create_chat_session_service(
-        db,
-        user_id=current_user.user_id,
-    )

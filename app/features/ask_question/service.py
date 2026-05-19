@@ -47,12 +47,16 @@ from app.features.ask_question.schemas.frontend import (
     ChatSessionDetailResponse,
     AnalysisResponse,
     AnalysisData,
-    ChatSessionCreateData,
-    ChatSessionCreateResponse,
 )
 
 async def ask_question_service(
-    db, *, user_id: str, session_id: int | None, query_text: str, solver_log: UploadFile
+    db, 
+    *, 
+    user_id: str, 
+    session_id: int | None, 
+    query_text: str, 
+    parameters: str | None,
+    solver_log: UploadFile | None,
 ) -> dict:
     
     if session_id is None:
@@ -71,36 +75,60 @@ async def ask_question_service(
         if chat_session is None:
             raise ChatSessionNotFoundException(session_id)
 
+    # parameters는 선택 입력이다.
+    # JSON 배열 문자열(["Pressure","Power1h"])과 콤마 문자열(Pressure,Power1h)을 모두 허용한다.
+    if parameters:
+        try:
+            val = json.loads(parameters)
+            selected_parameters = val if isinstance(val, list) else [str(val)]
+        except json.JSONDecodeError:
+            selected_parameters = [
+                parameter.strip()
+                for parameter in parameters.split(",")
+                if parameter.strip()
+            ]
+    else:
+        selected_parameters = []
 
-    #문서의 parseLog 단계: solver.log 입력값을 검증하고 텍스트로 변환한 뒤 핵심 파라미터를 파싱한다.
+    # solver_log가 있는 요청만 기존 검증/파싱 체인을 태운다.
+    # validation chain 자체는 일단 수정하지 않고 기능이 정상 작동하면 수정한다. (추후 수정 예정)
+    parsed = {}
+    has_solver_log = solver_log is not None and bool(solver_log.filename)
 
-    file_bytes = await solver_log.read()
+    if has_solver_log:
+        file_bytes = await solver_log.read()
 
-    context = ValidationContext(
-        query_text=query_text,
-        filename=solver_log.filename,
-        file_bytes=file_bytes,
-    )
+        context = ValidationContext(
+            query_text=query_text,
+            filename=solver_log.filename,
+            file_bytes=file_bytes,
+        )
 
-    validation_chain = create_ask_question_validation_chain(
-        max_file_size_mb=settings.max_log_file_size_mb
-    )
-    validation_chain.validate(context)
-    
-    parsed = parse_solver_log_text(context.solver_log_text or "")
+        validation_chain = create_ask_question_validation_chain(
+            max_file_size_mb=settings.max_log_file_size_mb
+        )
+        validation_chain.validate(context)
 
-    # 사용자 질의 + 파싱 결과를 query_log에 먼저 저장해 추적 가능하게 만든다.
+        parsed = parse_solver_log_text(context.solver_log_text or "")
+
+    # 사용자 질의 + 파싱 결과 + 파라미터를 query_log에 먼저 저장해 추적 가능하게 만든다.
     query_log = create_query_log(
         db,
         user_id=user_id,
         session_id=session_id,
         query_text=query_text,
         query_solver_log=to_query_solver_log_json(parsed),
+        query_parameters=json.dumps(selected_parameters, ensure_ascii=False),
     )
 
     # AI 요청 포맷으로 변환해 질의하고, 성공/실패 스키마로 응답을 받는다.
-    ai_payload = to_ai_request_payload(query_text, parsed)          # 수정 필요
-    ai_result = await request_ai_answer(ai_payload)                 # 수정 필요
+    ai_payload = to_ai_request_payload(
+        query_text, 
+        parsed,
+        parameters=selected_parameters,
+        include_data=has_solver_log,
+    )
+    ai_result = await request_ai_answer(ai_payload)
 
     # AI 실패 시: 실패 메시지를 DB에 남기고 에러 응답을 즉시 반환한다.
     if ai_result.status == "error":
@@ -109,6 +137,7 @@ async def ask_question_service(
             log_id=query_log.log_id,
             response_text=ai_result.message,
             similar_log_files=[],
+            important_parameters=[],
         )
         return {
             "status": "error",
@@ -118,6 +147,7 @@ async def ask_question_service(
 
     # AI 성공 시: 유사 로그 파일명 목록으로 solver_result 상세 데이터를 조회한다.
     similar_logs = ai_result.data.similar_logs
+    important_parameters = ai_result.data.important_parameters
 
     # AI 답변과 AI가 찾은 유사 로그 파일명 목록을 DB에 저장한다.
     # response_case_ids에 값이 있으면 나중에 분석 그래프 조회가 가능하다.
@@ -125,7 +155,8 @@ async def ask_question_service(
         db,
         log_id=query_log.log_id,
         response_text=ai_result.data.chat_response, # 자연어 응답
-        similar_log_files=similar_logs, # log 넘버 (000.log) 
+        similar_log_files=similar_logs, # log 넘버 (000.log)
+        important_parameters=important_parameters, 
     )
 
     # 채팅방의 마지막 대화 시간을 갱신한다.
@@ -255,19 +286,3 @@ def get_analysis_data_service(db, *, user_id: str, log_id: int):
 def _has_analysis(response_case_ids: str | None) -> bool:
     return response_case_ids not in (None, "", "[]")
 
-
-# 새 채팅방 생성 서비스.
-# 이 단계에서는 빈 채팅방만 만들고, 질의 저장/solver.log 파싱/AI 호출은 하지 않는다.
-# 실제 채팅방 제목은 첫 질의가 들어왔을 때 query_text를 기준으로 갱신할 예정이다.
-def create_chat_session_service(db, *, user_id: str) -> ChatSessionCreateResponse:
-    chat_session = create_chat_session(
-        db,
-        user_id=user_id,
-        title="새 채팅",
-    )
-
-    return ChatSessionCreateResponse(
-        data=ChatSessionCreateData(
-            session_id=chat_session.session_id,
-        )
-    )

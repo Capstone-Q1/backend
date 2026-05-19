@@ -15,18 +15,20 @@ class AiRequestData(BaseModel):
 
 
 
-# 역할: AI 질의 요청 본문 스키마(query_text + data).
+# 역할: AI 질의 요청 본문 스키마(query_text + data + parameters).
 # 사용 시점: 내부에서 AI 엔드포인트 호출 payload를 구성/검증할 때 사용.
 class AiQuestionRequest(BaseModel):
     query_text: str = Field(min_length=1)
-    data: AiRequestData
+    parameters: list[str] = Field(default_factory=list)
+    data: AiRequestData | None = None
 
 
 # 역할: AI 성공 응답의 data 본문 스키마.
-# 사용 시점: AI가 정상 응답했을 때 답변/유사 로그 목록을 담아 파싱할 때 사용.
+# 사용 시점: AI가 정상 응답했을 때 답변/유사 로그 목록/중요 파라미터를 담아 파싱할 때 사용.
 class AiSuccessData(BaseModel):
     chat_response: str
     similar_logs: list[str]
+    important_parameters: list[str] = Field(default_factory=list)
 
 
 # 역할: AI 성공 응답의 최상위 스키마.
