@@ -47,8 +47,6 @@ from app.features.ask_question.schemas.frontend import (
     ChatSessionDetailResponse,
     AnalysisResponse,
     AnalysisData,
-    ChatSessionCreateData,
-    ChatSessionCreateResponse,
 )
 
 async def ask_question_service(
@@ -277,19 +275,3 @@ def get_analysis_data_service(db, *, user_id: str, log_id: int):
 def _has_analysis(response_case_ids: str | None) -> bool:
     return response_case_ids not in (None, "", "[]")
 
-
-# 새 채팅방 생성 서비스.
-# 이 단계에서는 빈 채팅방만 만들고, 질의 저장/solver.log 파싱/AI 호출은 하지 않는다.
-# 실제 채팅방 제목은 첫 질의가 들어왔을 때 query_text를 기준으로 갱신할 예정이다.
-def create_chat_session_service(db, *, user_id: str) -> ChatSessionCreateResponse:
-    chat_session = create_chat_session(
-        db,
-        user_id=user_id,
-        title="새 채팅",
-    )
-
-    return ChatSessionCreateResponse(
-        data=ChatSessionCreateData(
-            session_id=chat_session.session_id,
-        )
-    )

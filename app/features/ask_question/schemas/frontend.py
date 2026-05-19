@@ -136,15 +136,3 @@ class ErrorResponse(BaseModel):
     error_code: str
     error_message: str
 
-
-# 새 채팅방 생성 응답의 data 부분.
-# 새 채팅방을 만들면 프론트는 이후 질의응답 API에 사용할 session_id만 필요하다.
-class ChatSessionCreateData(BaseModel):
-    session_id: int
-
-
-# 새 채팅방 생성 API 응답 스키마.
-# 기존 API 응답 형식과 맞추기 위해 status + data 구조로 반환한다.
-class ChatSessionCreateResponse(BaseModel):
-    status: Literal["success"] = "success"
-    data: ChatSessionCreateData
