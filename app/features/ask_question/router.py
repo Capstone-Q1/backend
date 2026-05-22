@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_db, get_current_user
-from app.features.ask_question.service import ask_question_service, get_chat_sessions_service, get_chat_session_detail_service, get_analysis_data_service
-from app.features.ask_question.schemas.frontend import ChatSessionListResponse, ChatSessionDetailResponse, AnalysisResponse, AskQuestionResponse
+from app.features.ask_question.service import ask_question_service, get_chat_sessions_service, get_chat_session_detail_service, get_analysis_data_service, get_dashboard_service
+from app.features.ask_question.schemas.frontend import ChatSessionListResponse, ChatSessionDetailResponse, AnalysisResponse, AskQuestionResponse, DashboardResponse
 from app.models.user import User
 
 router = APIRouter()
@@ -65,6 +65,19 @@ def get_chat_session_detail(
     )
 
 
+@router.get("/dashboard/{session_id}", response_model=DashboardResponse)
+def get_dashboard(
+    session_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return get_dashboard_service(
+        db,
+        user_id=current_user.user_id,
+        session_id=session_id,
+    )
+
+
 # 분석 그래프 조회 API.
 # 질의응답 API에서는 has_analysis만 내려주고,
 # 프론트가 분석 그래프 보기 버튼을 누르면 log_id 기준으로 입력 데이터와 AI 유사 로그 데이터를 조회한다.
@@ -79,4 +92,3 @@ def get_analysis_data(
         user_id=current_user.user_id,
         log_id=log_id,
     )
-

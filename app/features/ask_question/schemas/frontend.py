@@ -77,6 +77,56 @@ class AnalysisResponse(BaseModel):
     data: AnalysisData
 
 
+class DashboardSimilarLogData(BaseModel):
+    id: int
+    log_file_name: str
+    simulation_source: str
+    simulation_heating: str
+    simulation_spulsing: str
+    simulation_bias: str
+    simulation_dtout: str
+    chamber_lp: str
+    chamber_rp: str
+    chamber_ls: str
+    chamber_rsub: str
+    source_powerh: str
+    source_powerl: str
+    source_frequency: str
+    bias_power1h: str | None
+    bias_frequency1: str | None
+    pressure_pressure: str
+    pressure_inlet_species: str
+    pressure_q: str
+    considered_ar_star: str
+    considered_ar: str
+    considered_ar_plus: str
+    considered_e: str
+    temperature_gas_temperature: str
+    temperature_electron_temperature: str
+    temperature_ion_temperature: str
+    heating_absorbed_power: str
+    heating_alpha: str
+    heating_plasma_resistance: str
+    heating_plasma_reactance: str
+    bias_dc_offset: str | None
+    bias_peak_to_peak: str | None
+    sheath_j0h_h: str
+    number_density_ar_star: str
+    number_density_ar: str
+    number_density_ar_plus: str
+    number_density_e: str
+    ion_flux_ar_plus: str
+    radical_flux_ar_star: str
+    radical_flux_ar: str
+    avg_ion_energy_ar_plus: str
+
+
+class DashboardResponse(BaseModel):
+    status: Literal["success"] = "success"
+    user_log: list[str]
+    similar_log: list[DashboardSimilarLogData]
+
+
 # ask_question 요청 바디 입력 스키마.
 # 클라이언트가 보낸 session_id, query_text를 검증할 때 사용.
 class AskQuestionForm(BaseModel):
@@ -135,4 +185,3 @@ class ChatSessionDetailResponse(BaseModel):
 class ErrorResponse(BaseModel):
     error_code: str
     error_message: str
-

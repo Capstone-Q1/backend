@@ -26,6 +26,7 @@ from app.features.ask_question.processors.utils.convert_to_json import (
     to_query_solver_log_json,
     parsed_to_similar_log_data,
     row_to_similar_log_data,
+    row_to_dashboard_similar_log_data,
 )
 from app.features.ask_question.exceptions import ChatSessionNotFoundException
 from app.features.ask_question.repository import (
@@ -47,6 +48,7 @@ from app.features.ask_question.schemas.frontend import (
     ChatSessionDetailResponse,
     AnalysisResponse,
     AnalysisData,
+    DashboardResponse,
 )
 
 async def ask_question_service(
@@ -229,6 +231,65 @@ def get_chat_session_detail_service(db, *, user_id: str, session_id: int) -> Cha
     )
 
 
+def get_dashboard_service(db, *, user_id: str, session_id: int) -> DashboardResponse:
+    chat_session = find_chat_session_by_id(
+        db,
+        session_id=session_id,
+        user_id=user_id,
+    )
+    if chat_session is None:
+        raise ChatSessionNotFoundException(session_id)
+
+    logs = find_query_logs_by_session_id(
+        db,
+        session_id=session_id,
+        user_id=user_id,
+    )
+
+    user_log: list[str] = [
+        log.query_solver_log or "{}"
+        for log in logs
+    ]
+
+    similar_log_file_names: list[str] = []
+    seen_file_names: set[str] = set()
+    for log in logs:
+        try:
+            case_ids = json.loads(log.response_case_ids or "[]")
+        except json.JSONDecodeError:
+            case_ids = []
+
+        if not isinstance(case_ids, list):
+            continue
+
+        for case_id in case_ids:
+            if not isinstance(case_id, str):
+                continue
+            if case_id in seen_file_names:
+                continue
+            seen_file_names.add(case_id)
+            similar_log_file_names.append(case_id)
+
+    similar_log_rows = find_solver_results_by_log_file_names(
+        db,
+        log_file_names=similar_log_file_names,
+    )
+    row_by_file_name = {row.log_file_name: row for row in similar_log_rows}
+    ordered_similar_log_rows = [
+        row_by_file_name[file_name]
+        for file_name in similar_log_file_names
+        if file_name in row_by_file_name
+    ]
+
+    return DashboardResponse(
+        user_log=user_log,
+        similar_log=[
+            row_to_dashboard_similar_log_data(row)
+            for row in ordered_similar_log_rows
+        ],
+    )
+
+
 def get_analysis_data_service(db, *, user_id: str, log_id: int):
     # log_id가 현재 로그인한 사용자의 질의 기록인지 먼저 확인한다.
     # 이렇게 해야 다른 사용자의 분석 데이터를 log_id만으로 조회하는 문제를 막을 수 있다.
@@ -285,4 +346,3 @@ def get_analysis_data_service(db, *, user_id: str, log_id: int):
 # response_case_ids에 AI가 찾은 유사 로그 목록이 저장되어 있으면 그래프 카드 표시 대상으로 본다.
 def _has_analysis(response_case_ids: str | None) -> bool:
     return response_case_ids not in (None, "", "[]")
-
