@@ -130,7 +130,11 @@ def to_ai_request_payload(
 # ai에서 넘어온 유사 데이터를 조회하여 프론트엔드 스키마에 맞게 변환하는 메서드도 여기에 추가
 
 import json
-from app.features.ask_question.schemas.frontend import AskQuestionResponse, SimilarLogData
+from app.features.ask_question.schemas.frontend import (
+    AskQuestionResponse,
+    SimilarLogData,
+    DashboardSimilarLogData,
+)
 from app.models.solver_result import SolverResult
 
 def to_query_solver_log_json(parsed_values: dict[str, str | None]) -> str:
@@ -230,6 +234,52 @@ def row_to_similar_log_data(row: SolverResult) -> SimilarLogData:
     )
 
 
+def row_to_dashboard_similar_log_data(row: SolverResult) -> DashboardSimilarLogData:
+    return DashboardSimilarLogData(
+        id=row.id,
+        log_file_name=row.log_file_name,
+        simulation_source=row.simulation_source,
+        simulation_heating=row.simulation_heating,
+        simulation_spulsing=row.simulation_spulsing,
+        simulation_bias=row.simulation_bias,
+        simulation_dtout=row.simulation_dtout,
+        chamber_lp=row.chamber_lp,
+        chamber_rp=row.chamber_rp,
+        chamber_ls=row.chamber_ls,
+        chamber_rsub=row.chamber_rsub,
+        source_powerh=row.source_powerh,
+        source_powerl=row.source_powerl,
+        source_frequency=row.source_frequency,
+        bias_power1h=row.bias_power1h,
+        bias_frequency1=row.bias_frequency1,
+        pressure_pressure=row.pressure_pressure,
+        pressure_inlet_species=row.pressure_inlet_species,
+        pressure_q=row.pressure_q,
+        considered_ar_star=row.considered_ar_star,
+        considered_ar=row.considered_ar,
+        considered_ar_plus=row.considered_ar_plus,
+        considered_e=row.considered_e,
+        temperature_gas_temperature=row.temperature_gas_temperature,
+        temperature_electron_temperature=row.temperature_electron_temperature,
+        temperature_ion_temperature=row.temperature_ion_temperature,
+        heating_absorbed_power=row.heating_absorbed_power,
+        heating_alpha=row.heating_alpha,
+        heating_plasma_resistance=row.heating_plasma_resistance,
+        heating_plasma_reactance=row.heating_plasma_reactance,
+        bias_dc_offset=row.bias_dc_offset,
+        bias_peak_to_peak=row.bias_peak_to_peak,
+        sheath_j0h_h=row.sheath_j0h_h,
+        number_density_ar_star=row.number_density_ar_star,
+        number_density_ar=row.number_density_ar,
+        number_density_ar_plus=row.number_density_ar_plus,
+        number_density_e=row.number_density_e,
+        ion_flux_ar_plus=row.ion_flux_ar_plus,
+        radical_flux_ar_star=row.radical_flux_ar_star,
+        radical_flux_ar=row.radical_flux_ar,
+        avg_ion_energy_ar_plus=row.avg_ion_energy_ar_plus,
+    )
+
+
 # 최종적으로 프론트에 반환할 질의응답 성공 응답을 만든다.
 def to_frontend_success_payload(
     session_id: int,
@@ -247,4 +297,3 @@ def to_frontend_success_payload(
         },
     )
     return response.model_dump(by_alias=True)
-
