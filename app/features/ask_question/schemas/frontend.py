@@ -48,6 +48,7 @@ class AskQuestionData(BaseModel):
     session_id: int
     log_id: int
     chat_response: str
+    important_parameters: list[str] = Field(default_factory=list)
     # AI가 찾은 유사 로그가 있으면 true.
     # 프론트는 이 값으로 "분석 그래프 보기" 버튼 표시 여부를 판단한다.
     has_analysis: bool

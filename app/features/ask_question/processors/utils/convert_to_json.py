@@ -285,6 +285,7 @@ def to_frontend_success_payload(
     session_id: int,
     log_id: int,
     chat_response: str,
+    important_parameters: list[str] | None,
     has_analysis: bool,
 ) -> dict:
     response = AskQuestionResponse(
@@ -293,6 +294,7 @@ def to_frontend_success_payload(
             "session_id": session_id,
             "log_id": log_id,
             "chat_response": chat_response,
+            "important_parameters": important_parameters or [],
             "has_analysis": has_analysis,
         },
     )

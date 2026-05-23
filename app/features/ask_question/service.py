@@ -169,6 +169,7 @@ async def ask_question_service(
         session_id=session_id,
         log_id=query_log.log_id,
         chat_response=ai_result.data.chat_response,
+        important_parameters=important_parameters,
         # 채팅방 상세 조회와 같은 기준으로 분석 결과 존재 여부를 내려준다.
         # 프론트는 true일 때 "분석 그래프 보기" 버튼을 표시한다.
         has_analysis=_has_analysis(updated_query_log.response_case_ids),
