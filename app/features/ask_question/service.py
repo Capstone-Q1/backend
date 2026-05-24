@@ -28,7 +28,7 @@ from app.features.ask_question.processors.utils.convert_to_json import (
     row_to_similar_log_data,
     row_to_dashboard_similar_log_data,
 )
-from app.features.ask_question.exceptions import ChatSessionNotFoundException
+from app.features.ask_question.exceptions import AiRequestFailedException, ChatSessionNotFoundException
 from app.features.ask_question.repository import (
     create_query_log,
     create_chat_session,
@@ -36,6 +36,8 @@ from app.features.ask_question.repository import (
     update_chat_session_updated_at,
     find_chat_session_by_id,
     find_chat_sessions_by_user_id,
+    delete_chat_session_by_id,
+    update_chat_session_title,
     find_query_logs_by_session_id,
     find_query_log_by_id,
     find_solver_results_by_log_file_names,
@@ -46,6 +48,10 @@ from app.features.ask_question.schemas.frontend import (
     ChatSessionDetailMessage,
     ChatSessionDetailData,
     ChatSessionDetailResponse,
+    ChatSessionDeleteResponse,
+    ChatSessionTitleUpdateRequest,
+    ChatSessionTitleUpdateData,
+    ChatSessionTitleUpdateResponse,
     AnalysisResponse,
     AnalysisData,
     DashboardResponse,
@@ -141,11 +147,10 @@ async def ask_question_service(
             similar_log_files=[],
             important_parameters=[],
         )
-        return {
-            "status": "error",
-            "error_code": ai_result.error_code,
-            "error_message": ai_result.message,
-        }
+        raise AiRequestFailedException(
+            message=ai_result.message,
+            error_code=ai_result.error_code,
+        )
 
     # AI 성공 시: 유사 로그 파일명 목록으로 solver_result 상세 데이터를 조회한다.
     similar_logs = ai_result.data.similar_logs
@@ -169,6 +174,7 @@ async def ask_question_service(
         session_id=session_id,
         log_id=query_log.log_id,
         chat_response=ai_result.data.chat_response,
+        important_parameters=important_parameters,
         # 채팅방 상세 조회와 같은 기준으로 분석 결과 존재 여부를 내려준다.
         # 프론트는 true일 때 "분석 그래프 보기" 버튼을 표시한다.
         has_analysis=_has_analysis(updated_query_log.response_case_ids),
@@ -227,6 +233,42 @@ def get_chat_session_detail_service(db, *, user_id: str, session_id: int) -> Cha
                 )
                 for log in logs
             ],
+        )
+    )
+
+
+def delete_chat_session_service(db, *, user_id: str, session_id: int) -> ChatSessionDeleteResponse:
+    deleted = delete_chat_session_by_id(
+        db,
+        session_id=session_id,
+        user_id=user_id,
+    )
+    if not deleted:
+        raise ChatSessionNotFoundException(session_id)
+
+    return ChatSessionDeleteResponse()
+
+
+def update_chat_session_title_service(
+    db,
+    *,
+    user_id: str,
+    session_id: int,
+    request: ChatSessionTitleUpdateRequest,
+) -> ChatSessionTitleUpdateResponse:
+    chat_session = update_chat_session_title(
+        db,
+        session_id=session_id,
+        user_id=user_id,
+        title=request.title,
+    )
+    if chat_session is None:
+        raise ChatSessionNotFoundException(session_id)
+
+    return ChatSessionTitleUpdateResponse(
+        data=ChatSessionTitleUpdateData(
+            session_id=chat_session.session_id,
+            title=chat_session.title,
         )
     )
 

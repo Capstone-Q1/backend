@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import Literal
 from datetime import datetime
 
@@ -48,6 +48,7 @@ class AskQuestionData(BaseModel):
     session_id: int
     log_id: int
     chat_response: str
+    important_parameters: list[str] = Field(default_factory=list)
     # AI가 찾은 유사 로그가 있으면 true.
     # 프론트는 이 값으로 "분석 그래프 보기" 버튼 표시 여부를 판단한다.
     has_analysis: bool
@@ -178,6 +179,32 @@ class ChatSessionDetailData(BaseModel):
 class ChatSessionDetailResponse(BaseModel):
     status: Literal["success"] = "success"
     data: ChatSessionDetailData
+
+
+class ChatSessionDeleteResponse(BaseModel):
+    status: Literal["success"] = "success"
+
+
+class ChatSessionTitleUpdateRequest(BaseModel):
+    title: str = Field(min_length=1)
+
+    @field_validator("title")
+    @classmethod
+    def strip_title(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("title is required")
+        return value
+
+
+class ChatSessionTitleUpdateData(BaseModel):
+    session_id: int
+    title: str
+
+
+class ChatSessionTitleUpdateResponse(BaseModel):
+    status: Literal["success"] = "success"
+    data: ChatSessionTitleUpdateData
 
 
 # 에러 응답 공통 스키마.
