@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_db, get_current_user
-from app.features.ask_question.service import ask_question_service, get_chat_sessions_service, get_chat_session_detail_service, get_analysis_data_service, get_dashboard_service
-from app.features.ask_question.schemas.frontend import ChatSessionListResponse, ChatSessionDetailResponse, AnalysisResponse, AskQuestionResponse, DashboardResponse
+from app.features.ask_question.service import ask_question_service, get_chat_sessions_service, get_chat_session_detail_service, delete_chat_session_service, get_analysis_data_service, get_dashboard_service
+from app.features.ask_question.schemas.frontend import ChatSessionListResponse, ChatSessionDetailResponse, ChatSessionDeleteResponse, AnalysisResponse, AskQuestionResponse, DashboardResponse
 from app.models.user import User
 
 router = APIRouter()
@@ -59,6 +59,19 @@ def get_chat_session_detail(
     db: Session = Depends(get_db),
 ):
     return get_chat_session_detail_service(
+        db,
+        user_id=current_user.user_id,
+        session_id=session_id,
+    )
+
+
+@router.delete("/session/{session_id}", response_model=ChatSessionDeleteResponse)
+def delete_chat_session(
+    session_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return delete_chat_session_service(
         db,
         user_id=current_user.user_id,
         session_id=session_id,

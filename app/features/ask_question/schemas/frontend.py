@@ -181,6 +181,10 @@ class ChatSessionDetailResponse(BaseModel):
     data: ChatSessionDetailData
 
 
+class ChatSessionDeleteResponse(BaseModel):
+    status: Literal["success"] = "success"
+
+
 # 에러 응답 공통 스키마.
 # 실패/예외 상황에서 error_code, error_message를 일관되게 반환할 때 사용.
 class ErrorResponse(BaseModel):

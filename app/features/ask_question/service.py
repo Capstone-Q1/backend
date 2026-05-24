@@ -36,6 +36,7 @@ from app.features.ask_question.repository import (
     update_chat_session_updated_at,
     find_chat_session_by_id,
     find_chat_sessions_by_user_id,
+    delete_chat_session_by_id,
     find_query_logs_by_session_id,
     find_query_log_by_id,
     find_solver_results_by_log_file_names,
@@ -46,6 +47,7 @@ from app.features.ask_question.schemas.frontend import (
     ChatSessionDetailMessage,
     ChatSessionDetailData,
     ChatSessionDetailResponse,
+    ChatSessionDeleteResponse,
     AnalysisResponse,
     AnalysisData,
     DashboardResponse,
@@ -230,6 +232,18 @@ def get_chat_session_detail_service(db, *, user_id: str, session_id: int) -> Cha
             ],
         )
     )
+
+
+def delete_chat_session_service(db, *, user_id: str, session_id: int) -> ChatSessionDeleteResponse:
+    deleted = delete_chat_session_by_id(
+        db,
+        session_id=session_id,
+        user_id=user_id,
+    )
+    if not deleted:
+        raise ChatSessionNotFoundException(session_id)
+
+    return ChatSessionDeleteResponse()
 
 
 def get_dashboard_service(db, *, user_id: str, session_id: int) -> DashboardResponse:
