@@ -28,7 +28,7 @@ from app.features.ask_question.processors.utils.convert_to_json import (
     row_to_similar_log_data,
     row_to_dashboard_similar_log_data,
 )
-from app.features.ask_question.exceptions import ChatSessionNotFoundException
+from app.features.ask_question.exceptions import AiRequestFailedException, ChatSessionNotFoundException
 from app.features.ask_question.repository import (
     create_query_log,
     create_chat_session,
@@ -147,11 +147,10 @@ async def ask_question_service(
             similar_log_files=[],
             important_parameters=[],
         )
-        return {
-            "status": "error",
-            "error_code": ai_result.error_code,
-            "error_message": ai_result.message,
-        }
+        raise AiRequestFailedException(
+            message=ai_result.message,
+            error_code=ai_result.error_code,
+        )
 
     # AI 성공 시: 유사 로그 파일명 목록으로 solver_result 상세 데이터를 조회한다.
     similar_logs = ai_result.data.similar_logs
