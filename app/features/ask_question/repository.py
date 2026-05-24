@@ -143,6 +143,27 @@ def delete_chat_session_by_id(db: Session, *, session_id: int, user_id: str) -> 
     return True
 
 
+def update_chat_session_title(
+    db: Session,
+    *,
+    session_id: int,
+    user_id: str,
+    title: str,
+) -> ChatSession | None:
+    chat_session = find_chat_session_by_id(
+        db,
+        session_id=session_id,
+        user_id=user_id,
+    )
+    if chat_session is None:
+        return None
+
+    chat_session.title = title
+    db.commit()
+    db.refresh(chat_session)
+    return chat_session
+
+
 # 특정 채팅방의 질의응답 로그 목록 조회
 # 채팅방 상세 화면에 표시할 대화 내역을 질의 생성 시각 기준 오래된 순서로 조회한다.
 def find_query_logs_by_session_id(

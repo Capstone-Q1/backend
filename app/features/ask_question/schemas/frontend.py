@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import Literal
 from datetime import datetime
 
@@ -183,6 +183,28 @@ class ChatSessionDetailResponse(BaseModel):
 
 class ChatSessionDeleteResponse(BaseModel):
     status: Literal["success"] = "success"
+
+
+class ChatSessionTitleUpdateRequest(BaseModel):
+    title: str = Field(min_length=1)
+
+    @field_validator("title")
+    @classmethod
+    def strip_title(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("title is required")
+        return value
+
+
+class ChatSessionTitleUpdateData(BaseModel):
+    session_id: int
+    title: str
+
+
+class ChatSessionTitleUpdateResponse(BaseModel):
+    status: Literal["success"] = "success"
+    data: ChatSessionTitleUpdateData
 
 
 # 에러 응답 공통 스키마.
