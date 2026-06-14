@@ -1,0 +1,96 @@
+
+      SPATIALLY AVERAGED PLASMA TRANSPORT SIMULATOR
+         RELEASE 8.8.1, Feb  5 2026
+         COPYRIGHT (c) 2024, KWT Solution Inc.
+
+      THE BASIC FEATURES OF THE SIMULATOR:
+         1) SPATIALLY AVERAGED TRNSPORT MODULE
+         2) NON-LOCAL ELECTRON HEATING MODULE
+         3) RF SHEATH MODULE
+
+      ----------------------------------------------------------------
+      [SIMULATION OPTIONS]
+         Source        = TCP
+         Heating       = ON
+         SPulsing      = OFF
+         Bias          = ON
+         dtout         = 1.00e-09 (s)
+
+      [CHAMBER GEOMETRY]
+         Lp   = 1.3000e+01 (cm)
+         Rp   = 1.8000e+01 (cm)
+         Ls   = 1.0000e+01 (cm)
+         Rsub = 1.0000e+01 (cm)
+
+      [SOURCE POWER CONDITIONS]
+         PowerH     = 4.0000e+02 (W)
+         PowerL     = 0.0000e+00 (W)
+         Frequency  = 1.3560e+07 (Hz)
+
+      [BIAS POWER CONDITIONS]
+         Power1h      = 4.0000e+02 (W)
+         Frequency_1  = 2.0000e+06 (Hz)
+
+      [PREASURE & INLET CONDITIONS]
+         Pressure      = 4.0000e+00 (mTorr)
+         Inlet species = Ar 
+         Q             = 2.000e+01 (sccm)
+
+      [CONSIDERED SPECIES]
+         Species       Mass (g)
+         ------------------------------
+             Ar*     6.633365e-23
+             Ar      6.633365e-23
+             Ar+     6.633365e-23
+             E       9.049725e-28
+         ------------------------------
+
+      ================================================================
+                                 OUTPUT LIST                          
+      ================================================================
+      Weighting parameter (gamma) is updated as 1.0000e+00.
+      Computing time = 3.681326e+01 (s)
+
+      [TEMPERATURE PARAMETERS]
+         Gas Temp.      = 2.585315e-02 (eV)
+         Electron Temp. = 2.616708e+00 (eV)
+         Ion Temp.      = 1.443899e-01 (eV)
+
+      [HEATING PARAMETERS]
+         Absorbed power    = 3.750309e+02 (W)
+         alpha             = 9.375772e-01 (a.u.)
+         Plasma resistance = 8.820705e-01 (ohm)
+         Plasma reactance  = 5.744120e+00 (ohm)
+
+      [BIAS PARAMETERS]
+         dc-offset    = -1.217977e+02 (V)
+         peak-to-peak = 4.999635e+02 (V)
+
+      [SHEATH PARAMETERS]
+         J0h_h        = 5.423794e+07 (statampere/cm^2)
+
+      [NUMBER DENSITY]
+         Species       (#/cm^3)
+         ------------------------------
+             Ar*     1.852339e+11
+             Ar      1.073051e+14
+             Ar+     3.029154e+11
+             E       3.029154e+11
+
+      [ION FLUX AT THE SHEATH EDGE]
+         Species       (#/cm^2sec)
+         ------------------------------
+             Ar+     4.618949e+16
+
+      [RADICAL FLUX AT THE SHEATH EDGE]
+         Species       (#/cm^2sec)
+         ------------------------------
+             Ar*     2.460288e+15
+             Ar      9.889766e+17
+
+      [AVERAGE ION ENERGY AT THE SUBSTRATE]
+         Species       (eV)
+         ------------------------------
+             Ar+     1.190140e+02
+
+
