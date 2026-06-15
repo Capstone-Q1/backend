@@ -1,0 +1,38 @@
+3. service에서 체인 실행
+
+service.py에서 딱 이 순서로 조립:
+
+ValidationContext 생성
+validation_chain.validate(context)
+parse_log
+repository.create_query_log
+ai_client.request
+repository.find_solver_results_by_log_file_names
+repository.update_query_response
+응답 반환
+
+4. router는 입력만 받고 service 호출
+
+router.py:
+
+query_text/session_id는 Form
+solver_log는 UploadFile
+파일 bytes 읽어서 service에 전달
+
+5. main.py 라우터 등록
+
+main.py에 ask_question include_router 추가.
+
+핵심만 요약하면:
+
+
+if 덩어리로 검증하지 말고 validators + chain으로 분리
+
+service는 “검증→처리 흐름 조율”만 담당
+
+router는 입구, repository는 DB, validator는 검증 한 가지씩 담당
+
+
+
+아직 미적용이고 이건 나중에 적용할거임. 일단 만들어둔거고
+수정 필요
